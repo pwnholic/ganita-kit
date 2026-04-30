@@ -1,0 +1,136 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
+    "root": true,
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true,
+        "defaultBranch": "main"
+    },
+    "files": {
+        "includes": ["**/*.ts"],
+        "ignoreUnknown": true
+    },
+    "formatter": {
+        "enabled": true,
+        "formatWithErrors": false,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineEnding": "lf",
+        "lineWidth": 100,
+        "attributePosition": "auto"
+    },
+    "assist": {
+        "enabled": true,
+        "actions": {
+            "source": {
+                "organizeImports": {
+                    "level": "on"
+                }
+            }
+        }
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "correctness": {
+                "noUnusedVariables": "error",
+                "noUnusedImports": "error",
+                "useExhaustiveDependencies": "warn",
+                "noConstantCondition": "error",
+                "noUndeclaredVariables": "error",
+                "noInvalidUseBeforeDeclaration": "error"
+            },
+            "suspicious": {
+                "noExplicitAny": "warn",
+                "noDoubleEquals": "error",
+                "noDuplicateObjectKeys": "error",
+                "noDuplicateParameters": "error",
+                "noFallthroughSwitchClause": "error",
+                "noMisleadingInstantiator": "error",
+                "noUnsafeDeclarationMerging": "error",
+                "useIsArray": "error",
+                "noImplicitAnyLet": "error"
+            },
+            "style": {
+                "noNonNullAssertion": "warn",
+                "useConst": "error",
+                "useTemplate": "error",
+                "useSingleVarDeclarator": "error",
+                "noUnusedTemplateLiteral": "error",
+                "useNumberNamespace": "error",
+                "noParameterAssign": "error",
+                "useDefaultParameterLast": "error",
+                "useShorthandAssign": "error",
+                "useEnumInitializers": "error",
+                "useLiteralEnumMembers": "error",
+                "noNamespace": "error",
+                "useAsConstAssertion": "error",
+                "useBlockStatements": "off"
+            },
+            "complexity": {
+                "noForEach": "off",
+                "useLiteralKeys": "error",
+                "useOptionalChain": "error",
+                "noUselessCatch": "error",
+                "noUselessConstructor": "error",
+                "noUselessTypeConstraint": "error",
+                "noExcessiveCognitiveComplexity": {
+                    "level": "warn",
+                    "options": { "maxAllowedComplexity": 15 }
+                }
+            },
+            "performance": {
+                "noAccumulatingSpread": "warn",
+                "noDelete": "warn"
+            },
+            "security": {
+                "noDangerouslySetInnerHtml": "error",
+                "noGlobalEval": "error"
+            }
+        }
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "double",
+            "jsxQuoteStyle": "double",
+            "quoteProperties": "asNeeded",
+            "trailingCommas": "all",
+            "semicolons": "always",
+            "arrowParentheses": "always",
+            "bracketSpacing": true,
+            "bracketSameLine": false
+        },
+        "parser": {
+            "unsafeParameterDecoratorsEnabled": true
+        },
+        "globals": []
+    },
+    "overrides": [
+        {
+            "includes": ["__tests__/**/*.ts", "*.test.ts", "*.spec.ts"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noExplicitAny": "off",
+                        "noConsole": "off"
+                    },
+                    "style": {
+                        "noNonNullAssertion": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["*.config.ts", "*.config.js", "vite.config.*", "vitest.config.*"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noDefaultExport": "off"
+                    }
+                }
+            }
+        }
+    ]
+}

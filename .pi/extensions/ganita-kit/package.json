@@ -1,0 +1,37 @@
+{
+    "name": "ganita-kit",
+    "version": "1.0.0",
+    "description": "Unified AI agent toolkit — webclaw, bloks, tldr, fastedit as Pi extensions",
+    "main": "./index.ts",
+    "scripts": {
+        "check": "biome check ./",
+        "check:apply": "biome check --fix ./",
+        "check:unsafe": "biome check --unsafe --fix ./",
+        "typecheck": "tsc --noEmit",
+        "typecheck:all": "tsc --noEmit -p tsconfig.test.json",
+        "build": "tsc",
+        "clean": "rm -rf dist",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "author": "pwnholic",
+    "license": "MIT",
+    "type": "module",
+    "keywords": [
+        "pi-package"
+    ],
+    "pi": {
+        "extensions": [
+            "./index.ts"
+        ]
+    },
+    "dependencies": {
+        "@mariozechner/pi-coding-agent": "^0.70.6"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.4.13",
+        "@types/node": "^25.6.0",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.5"
+    }
+}

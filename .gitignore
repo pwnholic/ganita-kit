@@ -1,0 +1,7 @@
+repos/
+**/node_modules/
+dist/
+.tldr/
+.tldrignore
+*.d.ts
+*.js.map
