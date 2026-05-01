@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { warmCache } from "../commands/tldr.js";
+import { warmCache } from "../tools/tldr.js";
 import { hasBinary } from "../config/config.js";
 
 /**

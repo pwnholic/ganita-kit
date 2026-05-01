@@ -11,7 +11,7 @@ vi.mock("../commands/tldr.js", () => ({
 	register: vi.fn(),
 }));
 
-import { warmCache } from "../commands/tldr.js";
+import { warmCache } from "../tools/tldr.js";
 import { hasBinary } from "../config/config.js";
 import { register } from "../event/event.js";
 

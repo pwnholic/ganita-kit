@@ -1,8 +1,9 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { register as registerBloks } from "./commands/bloks.js";
-import { register as registerFastedit } from "./commands/fastedit.js";
-import { register as registerTldr } from "./commands/tldr.js";
-import { register as registerWebclaw } from "./commands/webclaw.js";
+
+import { register as registerBloks } from "./tools/bloks.js";
+import { register as registerFastedit } from "./tools/fastedit.js";
+import { register as registerTldr } from "./tools/tldr.js";
+import { register as registerWebclaw } from "./tools/webclaw.js";
 import { register as registerEvent } from "./event/event.js";
 
 /**
