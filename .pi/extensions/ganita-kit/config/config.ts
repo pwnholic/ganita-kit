@@ -25,6 +25,10 @@ export interface GanitaKitConfig {
     exaApiKey?: string;
     /** CrofAI API key for summarization. Falls back to CROFAI_API_KEY env var. */
     crofAiKey?: string;
+    /** Gemini API key. Falls back to GEMINI_API_KEY env var. */
+    geminiApiKey?: string;
+    /** Chrome profile name for cookie extraction (default: "Default"). */
+    chromeProfile?: string;
 
     /** Search-related configuration. */
     search?: {
@@ -85,6 +89,16 @@ export interface GanitaKitConfig {
         /** Request timeout in ms (default: 60000). */
         requestTimeoutMs?: number;
     };
+
+    /** Gemini search provider configuration. */
+    gemini?: {
+        /** Default model for Gemini API search (default: gemini-3-flash-preview). */
+        defaultModel?: string;
+        /** Gemini Web model for cookie-based search (default: gemini-2.5-flash). */
+        webModel?: string;
+        /** Request timeout in ms (default: 60000). */
+        timeoutMs?: number;
+    };
 }
 
 // ── Defaults ───────────────────────────────────────────────
@@ -92,6 +106,8 @@ export interface GanitaKitConfig {
 const DEFAULTS: Required<GanitaKitConfig> = {
     exaApiKey: "",
     crofAiKey: "",
+    geminiApiKey: "",
+    chromeProfile: "Default",
     search: {
         defaultNumResults: 5,
         maxResultsPerQuery: 20,
@@ -122,6 +138,11 @@ const DEFAULTS: Required<GanitaKitConfig> = {
         mcpUrl: "https://mcp.exa.ai/mcp",
         requestTimeoutMs: 60_000,
     },
+    gemini: {
+        defaultModel: "gemini-3-flash-preview",
+        webModel: "gemini-2.5-flash",
+        timeoutMs: 60_000,
+    },
 };
 
 // ── Loading ────────────────────────────────────────────────
@@ -135,14 +156,19 @@ function deepMerge(
     const result: Required<GanitaKitConfig> = {
         exaApiKey: defaults.exaApiKey,
         crofAiKey: defaults.crofAiKey,
+        geminiApiKey: defaults.geminiApiKey,
+        chromeProfile: defaults.chromeProfile,
         search: { ...defaults.search },
         curator: { ...defaults.curator },
         crof: { ...defaults.crof },
         exa: { ...defaults.exa },
+        gemini: { ...defaults.gemini },
     };
 
     if (overrides.exaApiKey !== undefined) result.exaApiKey = overrides.exaApiKey;
     if (overrides.crofAiKey !== undefined) result.crofAiKey = overrides.crofAiKey;
+    if (overrides.geminiApiKey !== undefined) result.geminiApiKey = overrides.geminiApiKey;
+    if (overrides.chromeProfile !== undefined) result.chromeProfile = overrides.chromeProfile;
 
     if (overrides.search) {
         for (const key of Object.keys(overrides.search) as Array<keyof typeof result.search>) {
@@ -173,6 +199,15 @@ function deepMerge(
             const val = overrides.exa[key];
             if (val !== undefined) {
                 (result.exa as Record<string, unknown>)[key] = val;
+            }
+        }
+    }
+
+    if (overrides.gemini) {
+        for (const key of Object.keys(overrides.gemini) as Array<keyof typeof result.gemini>) {
+            const val = overrides.gemini[key];
+            if (val !== undefined) {
+                (result.gemini as Record<string, unknown>)[key] = val;
             }
         }
     }
@@ -243,7 +278,23 @@ export function getCrofaAiKey(): string | null {
     );
 }
 
-// ── Binary resolution (existing) ───────────────────────────
+/**
+ * Get Gemini API key. Checks GEMINI_API_KEY env var first, then config file.
+ */
+export function getGeminiApiKey(): string | null {
+    return (
+        normalizeApiKey(process.env["GEMINI_API_KEY"]) ?? normalizeApiKey(loadConfig().geminiApiKey)
+    );
+}
+
+/**
+ * Get Chrome profile name for cookie extraction.
+ */
+export function getChromeProfile(): string {
+    return loadConfig().chromeProfile;
+}
+
+// ── Binary resolution ──────────────────────────────────────
 
 /** Binary names used by ganita-kit. */
 const BINARIES = ["tldr", "webclaw", "bloks", "fastedit"] as const;
