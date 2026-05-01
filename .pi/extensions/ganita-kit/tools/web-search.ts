@@ -563,7 +563,7 @@ export function register(pi: ExtensionAPI): void {
 			"For research tasks, prefer 'queries' with 2-4 varied angles over a single 'query' for broader coverage.",
 			"Set includeContent to true when you need the full text of source pages, not just snippets.",
 			"Set workflow to 'none' to skip the interactive curator browser.",
-			"Works without any API key via Exa MCP. Add exaApiKey to ~/.pi/web-search.json for direct API access.",
+			"Works without any API key via Exa MCP. Add exaApiKey to ~/.pi/ganita-kit.json for direct API access.",
 		],
 		parameters: Type.Object({
 			query: Type.Optional(

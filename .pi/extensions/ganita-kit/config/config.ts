@@ -111,7 +111,7 @@ const DEFAULTS: Required<GanitaKitConfig> = {
 	search: {
 		defaultNumResults: 5,
 		maxResultsPerQuery: 20,
-		maxOutputChars: 50_000,
+		maxOutputChars: 100_000,
 		extractTimeoutMs: 60_000,
 	},
 	curator: {

@@ -27,11 +27,11 @@ import { register as registerWebclaw } from "./tools/webclaw.js";
  * @param pi - The Pi extension API.
  */
 export default function (pi: ExtensionAPI): void {
-    registerEvent(pi);
-    registerWebclaw(pi);
-    registerWebSearch(pi);
-    registerCodeSearch(pi);
-    registerBloks(pi);
-    registerTldr(pi);
-    registerFastedit(pi);
+	registerEvent(pi);
+	registerWebclaw(pi);
+	registerWebSearch(pi);
+	registerCodeSearch(pi);
+	registerBloks(pi);
+	registerTldr(pi);
+	registerFastedit(pi);
 }
