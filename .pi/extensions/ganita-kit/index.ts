@@ -21,9 +21,9 @@ import { register as registerEvent } from "./event/event.js";
  * @param pi - The Pi extension API.
  */
 export default function (pi: ExtensionAPI): void {
-    registerEvent(pi);
-    registerWebclaw(pi);
-    registerBloks(pi);
-    registerTldr(pi);
-    registerFastedit(pi);
+	registerEvent(pi);
+	registerWebclaw(pi);
+	registerBloks(pi);
+	registerTldr(pi);
+	registerFastedit(pi);
 }
