@@ -71,7 +71,7 @@
             },
             "complexity": {
                 "noForEach": "off",
-                "useLiteralKeys": "error",
+                "useLiteralKeys": "off",
                 "useOptionalChain": "error",
                 "noUselessCatch": "error",
                 "noUselessConstructor": "error",
@@ -118,6 +118,9 @@
                     },
                     "style": {
                         "noNonNullAssertion": "off"
+                    },
+                    "complexity": {
+                        "useLiteralKeys": "off"
                     }
                 }
             }
