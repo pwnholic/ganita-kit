@@ -12,22 +12,22 @@ const MAX_OUTPUT = 50_000;
  * @returns Truncated text with suffix notice when truncated.
  */
 function truncate(text: string, max: number = MAX_OUTPUT): string {
-    if (text.length <= max) return text;
-    const excess = text.length - max;
-    return `${text.slice(0, max)}\n\n... [${excess} characters truncated]`;
+	if (text.length <= max) return text;
+	const excess = text.length - max;
+	return `${text.slice(0, max)}\n\n... [${excess} characters truncated]`;
 }
 
 /** Details shape for code_search tool results. */
 interface CodeSearchDetails {
-    query: string;
-    maxTokens: number;
-    error?: string;
+	query: string;
+	maxTokens: number;
+	error?: string;
 }
 
 /** Shared tool result shape. */
 type ToolResult = {
-    content: Array<{ type: "text"; text: string }>;
-    details: CodeSearchDetails;
+	content: Array<{ type: "text"; text: string }>;
+	details: CodeSearchDetails;
 };
 
 /**
@@ -37,71 +37,72 @@ type ToolResult = {
  * @param pi - The Pi extension API.
  */
 export function register(_pi: ExtensionAPI): void {
-    _pi.registerTool({
-        name: "code_search",
-        label: "Code Search",
-        description:
-            "Search for code examples, documentation, and API references. " +
-            "Returns relevant code snippets and docs from GitHub, Stack Overflow, " +
-            "and official documentation. No API key required — uses Exa MCP.",
-        promptSnippet:
-            "Use for programming/API/library questions to retrieve concrete examples and docs before implementing or debugging code.",
-        promptGuidelines: [
-            "Use code_search when you need code examples, API references, or documentation.",
-            "Works without any API key via Exa MCP.",
-            "Increase maxTokens for broader context when researching complex topics.",
-        ],
-        parameters: Type.Object({
-            query: Type.String({
-                description: "Programming question, API, library, or debugging topic to search for",
-            }),
-            maxTokens: Type.Optional(
-                Type.Integer({
-                    minimum: 1000,
-                    maximum: 50000,
-                    description:
-                        "Maximum tokens of code/documentation context to return (default: 5000)",
-                }),
-            ),
-        }),
+	_pi.registerTool({
+		name: "code_search",
+		label: "Code Search",
+		description:
+			"Search for code examples, documentation, and API references. " +
+			"Returns relevant code snippets and docs from GitHub, Stack Overflow, " +
+			"and official documentation. No API key required — uses Exa MCP.",
+		promptSnippet:
+			"Use for programming/API/library questions to retrieve concrete examples and docs before implementing or debugging code.",
+		promptGuidelines: [
+			"Use code_search when you need code examples, API references, or documentation.",
+			"Works without any API key via Exa MCP.",
+			"Increase maxTokens for broader context when researching complex topics.",
+		],
+		parameters: Type.Object({
+			query: Type.String({
+				description:
+					"Programming question, API, library, or debugging topic to search for",
+			}),
+			maxTokens: Type.Optional(
+				Type.Integer({
+					minimum: 1000,
+					maximum: 50000,
+					description:
+						"Maximum tokens of code/documentation context to return (default: 5000)",
+				}),
+			),
+		}),
 
-        async execute(_toolCallId, params, signal): Promise<ToolResult> {
-            const query = params.query.trim();
+		async execute(_toolCallId, params, signal): Promise<ToolResult> {
+			const query = params.query.trim();
 
-            if (!query) {
-                return {
-                    content: [{ type: "text", text: "Error: No query provided." }],
-                    details: {
-                        query: "",
-                        maxTokens: params.maxTokens ?? 5000,
-                        error: "No query provided",
-                    },
-                };
-            }
+			if (!query) {
+				return {
+					content: [{ type: "text", text: "Error: No query provided." }],
+					details: {
+						query: "",
+						maxTokens: params.maxTokens ?? 5000,
+						error: "No query provided",
+					},
+				};
+			}
 
-            const maxTokens = params.maxTokens ?? 5000;
+			const maxTokens = params.maxTokens ?? 5000;
 
-            try {
-                const text = await callExaMcp(
-                    "get_code_context_exa",
-                    {
-                        query,
-                        tokensNum: maxTokens,
-                    },
-                    signal,
-                );
+			try {
+				const text = await callExaMcp(
+					"get_code_context_exa",
+					{
+						query,
+						tokensNum: maxTokens,
+					},
+					signal,
+				);
 
-                return {
-                    content: [{ type: "text", text: truncate(text) }],
-                    details: { query, maxTokens },
-                };
-            } catch (err) {
-                const message = err instanceof Error ? err.message : String(err);
-                return {
-                    content: [{ type: "text", text: `Error: ${message}` }],
-                    details: { query, maxTokens, error: message },
-                };
-            }
-        },
-    });
+				return {
+					content: [{ type: "text", text: truncate(text) }],
+					details: { query, maxTokens },
+				};
+			} catch (err) {
+				const message = err instanceof Error ? err.message : String(err);
+				return {
+					content: [{ type: "text", text: `Error: ${message}` }],
+					details: { query, maxTokens, error: message },
+				};
+			}
+		},
+	});
 }
