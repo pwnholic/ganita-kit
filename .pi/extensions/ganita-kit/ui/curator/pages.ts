@@ -53,7 +53,15 @@ export function generateCuratorPage(
             </style>
         </head>
         <body>
-            <div class="timer-badge" id="timer" title="Click to adjust">--:--</div>
+            <div class="top-bar">
+                <label class="timer-toggle" title="Toggle auto-submit timer">
+                    <span class="timer-toggle-label">Session Timer</span>
+                    <input type="checkbox" id="timer-toggle" checked />
+                    <span class="timer-toggle-track"><span class="timer-toggle-thumb"></span></span>
+                </label>
+                <div class="timer-badge" id="timer">--:--</div>
+            </div>
+
             <main>
                 <div class="hero" id="hero">
                     <div class="hero-kicker">Web Search</div>
@@ -95,6 +103,7 @@ export function generateCuratorPage(
                         aria-live="polite"
                     >
                         <div class="summary-generating-head">
+                            <div class="summary-spinner"></div>
                             <span id="summary-generating-copy"
                                 >Generating summary draft\u2026</span
                             >
@@ -129,14 +138,6 @@ export function generateCuratorPage(
                 </div>
             </footer>
             <div
-                id="success-overlay"
-                class="success-overlay hidden"
-                aria-live="polite"
-            >
-                <div class="success-icon">OK</div>
-                <p>Results sent</p>
-            </div>
-            <div
                 id="expired-overlay"
                 class="expired-overlay hidden"
                 aria-live="polite"
@@ -147,6 +148,15 @@ export function generateCuratorPage(
                     <p>Time\u2019s up \u2014 sending all results to your agent.</p>
                 </div>
             </div>
+            <div
+                id="success-overlay"
+                class="success-overlay hidden"
+                aria-live="polite"
+            >
+                <div class="success-icon">OK</div>
+                <p>Results sent</p>
+            </div>
+
             <script>
                 ${SCRIPT.replace("__INLINE_DATA__", () => inlineData)}
             </script>
@@ -221,11 +231,58 @@ const CSS = `
         padding-bottom: 72px;
         margin: 0;
     }
-    .timer-badge {
+
+    .top-bar {
         position: fixed;
-        top: 20px;
-        right: 24px;
+        top: 16px;
+        right: 20px;
         z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .timer-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .timer-toggle input {
+        display: none;
+    }
+    .timer-toggle-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--fg-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .timer-toggle-track {
+        width: 36px;
+        height: 20px;
+        background: var(--border-muted);
+        border-radius: 10px;
+        position: relative;
+        transition: background 0.2s;
+    }
+    .timer-toggle input:checked + .timer-toggle-track {
+        background: var(--accent);
+    }
+    .timer-toggle-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: var(--fg);
+        border-radius: 50%;
+        transition: transform 0.2s;
+    }
+    .timer-toggle input:checked + .timer-toggle-track .timer-toggle-thumb {
+        transform: translateX(16px);
+    }
+    .timer-badge {
         font-size: 12px;
         font-weight: 600;
         font-variant-numeric: tabular-nums;
@@ -234,12 +291,11 @@ const CSS = `
         background: var(--bg-elevated);
         color: var(--fg-muted);
         border: 1px solid var(--border);
-        cursor: pointer;
         user-select: none;
         opacity: 0.5;
         transition: opacity 0.3s;
     }
-    .timer-badge:hover {
+    .timer-badge.active {
         opacity: 1;
     }
     .timer-badge.warn {
@@ -251,6 +307,10 @@ const CSS = `
         background: rgba(204, 102, 102, 0.15);
         color: #cc6666;
         opacity: 1;
+    }
+    .timer-badge.off {
+        opacity: 0.3;
+        color: var(--fg-dim);
     }
     .hero {
         padding: 40px 24px 24px;
@@ -382,6 +442,33 @@ const CSS = `
         padding: 40px 0;
         text-align: center;
     }
+    .summary-generating.hidden {
+        display: none;
+    }
+    .summary-generating-head {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    .summary-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border-muted);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        flex-shrink: 0;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    .summary-gen-timer {
+        font-size: 13px;
+        color: var(--fg-dim);
+        font-variant-numeric: tabular-nums;
+        margin-top: 8px;
+    }
     .summary-actions {
         display: flex;
         gap: 8px;
@@ -456,6 +543,7 @@ const CSS = `
         align-items: center;
         justify-content: center;
     }
+
     .expired-icon {
         font-size: 36px;
         color: var(--warning);
@@ -486,6 +574,7 @@ const CSS = `
         margin-bottom: 12px;
         cursor: pointer;
         transition: all 0.2s;
+        overflow: hidden;
     }
     .result-card:hover {
         background: var(--bg-hover);
@@ -498,6 +587,11 @@ const CSS = `
         display: flex;
         align-items: flex-start;
         gap: 12px;
+        min-width: 0;
+    }
+    .result-card-body {
+        min-width: 0;
+        overflow: hidden;
     }
     .result-card-check {
         width: 20px;
@@ -526,6 +620,8 @@ const CSS = `
         font-weight: 600;
         color: var(--fg);
         margin-bottom: 4px;
+        overflow-wrap: break-word;
+        word-break: break-word;
     }
     .result-card-provider {
         font-size: 11px;
@@ -537,6 +633,8 @@ const CSS = `
         color: var(--fg-muted);
         line-height: 1.6;
         margin-bottom: 8px;
+        overflow-wrap: break-word;
+        word-break: break-word;
     }
     .result-card-urls {
         font-size: 12px;
@@ -549,6 +647,7 @@ const CSS = `
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        max-width: 100%;
     }
     .result-card-url:hover {
         text-decoration: underline;
@@ -556,6 +655,8 @@ const CSS = `
     .result-card-error {
         font-size: 13px;
         color: #cc6666;
+        overflow-wrap: break-word;
+        word-break: break-word;
     }
     .hidden {
         display: none !important;
@@ -577,6 +678,7 @@ const SCRIPT = `
     var state = "searching";
 
     // DOM refs
+    var timerToggle = document.getElementById("timer-toggle");
     var timerEl = document.getElementById("timer");
     var heroTitle = document.querySelector(".hero-title");
     var heroDesc = document.querySelector(".hero-desc");
@@ -590,11 +692,27 @@ const SCRIPT = `
     var successOverlay = document.getElementById("success-overlay");
     var expiredOverlay = document.getElementById("expired-overlay");
 
-    // Timer
+    // Timer state (on by default)
+    var timerEnabled = true;
     var endAt = Date.now() + TIMEOUT_SEC * 1000;
     var timerInterval = setInterval(updateTimer, 1000);
     updateTimer();
+
+    timerToggle.addEventListener("change", function () {
+        timerEnabled = timerToggle.checked;
+        if (timerEnabled) {
+            endAt = Date.now() + TIMEOUT_SEC * 1000;
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer();
+        } else {
+            clearInterval(timerInterval);
+            timerEl.textContent = "\u221E";
+            timerEl.className = "timer-badge off";
+        }
+    });
+
     function updateTimer() {
+        if (!timerEnabled) return;
         var left = Math.max(0, Math.floor((endAt - Date.now()) / 1000));
         var min = Math.floor(left / 60);
         var sec = left % 60;
@@ -605,7 +723,7 @@ const SCRIPT = `
         } else if (left <= 30) {
             timerEl.className = "timer-badge warn";
         } else {
-            timerEl.className = "timer-badge";
+            timerEl.className = "timer-badge active";
         }
     }
 
@@ -654,7 +772,7 @@ const SCRIPT = `
         var html = '<div class="result-card' + selectedClass + '" data-index="' + index + '" onclick="toggleCard(this)">';
         html += '<div class="result-card-header">';
         html += '<div class="result-card-check' + (results._selected && results._selected[index] ? " checked" : "") + '"></div>';
-        html += '<div><div class="result-card-query">' + escapeHtml(data.query || "Search " + (index + 1)) + '</div>';
+        html += '<div class="result-card-body"><div class="result-card-query">' + escapeHtml(data.query || "Search " + (index + 1)) + '</div>';
         html += '<div class="result-card-provider">via ' + escapeHtml(data.provider || "exa") + '</div>';
         html += '<div class="result-card-answer">' + escapeHtml(truncateText(data.answer || "(no answer)", 500)) + '</div>';
         if (data.results && data.results.length) {
@@ -675,7 +793,7 @@ const SCRIPT = `
         var html = '<div class="result-card" data-index="' + index + '">';
         html += '<div class="result-card-header">';
         html += '<div style="width:20px;height:20px;flex-shrink:0"></div>';
-        html += '<div><div class="result-card-query">' + escapeHtml(data.query || "Search " + (index + 1)) + '</div>';
+        html += '<div class="result-card-body"><div class="result-card-query">' + escapeHtml(data.query || "Search " + (index + 1)) + '</div>';
         html += '<div class="result-card-error">' + escapeHtml(data.error || "Unknown error") + '</div>';
         html += '</div></div></div>';
         resultCards.insertAdjacentHTML("beforeend", html);
@@ -727,6 +845,30 @@ const SCRIPT = `
         showSummaryPanel(selected, isTimeout);
     }
 
+    // Summary generation timer
+    var summaryGenTimerEl = null;
+    var summaryGenTimerInterval = null;
+
+    function startSummaryGenTimer() {
+        if (summaryGenTimerEl) summaryGenTimerEl.remove();
+        summaryGenTimerEl = document.createElement("div");
+        summaryGenTimerEl.className = "summary-gen-timer";
+        summaryGenTimerEl.textContent = "0.0s";
+        summaryGen.appendChild(summaryGenTimerEl);
+        var startTime = Date.now();
+        summaryGenTimerInterval = setInterval(function () {
+            var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            if (summaryGenTimerEl) summaryGenTimerEl.textContent = elapsed + "s";
+        }, 100);
+    }
+
+    function stopSummaryGenTimer() {
+        if (summaryGenTimerInterval) {
+            clearInterval(summaryGenTimerInterval);
+            summaryGenTimerInterval = null;
+        }
+    }
+
     // Summary panel
     function showSummaryPanel(selected, isTimeout) {
         summaryPanel.classList.remove("hidden");
@@ -736,10 +878,13 @@ const SCRIPT = `
         sendBtn.disabled = true;
         sendBtn.textContent = "Generating summary\u2026";
 
+        startSummaryGenTimer();
+
         fetch(BASE + "/summarize", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: TOKEN, selected: selected })
         }).then(function (r) { return r.json(); }).then(function (d) {
+            stopSummaryGenTimer();
             summaryGen.classList.add("hidden");
             if (d.ok && d.summary) {
                 summaryInput.value = d.summary;
@@ -750,6 +895,7 @@ const SCRIPT = `
             sendBtn.textContent = "Approve & send";
             sendBtn.disabled = false;
         }).catch(function (err) {
+            stopSummaryGenTimer();
             summaryGen.classList.add("hidden");
             summaryInput.value = "Error: " + err.message;
             sendBtn.textContent = "Send without summary";
@@ -793,6 +939,7 @@ const SCRIPT = `
         summaryGen.classList.remove("hidden");
         sendBtn.disabled = true;
         sendBtn.textContent = "Regenerating\u2026";
+        startSummaryGenTimer();
         var selected = [];
         var sel = results._selected || {};
         for (var k in sel) { if (sel[k] && k !== "_selected") selected.push(parseInt(k)); }
@@ -800,11 +947,15 @@ const SCRIPT = `
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: TOKEN, selected: selected })
         }).then(function (r) { return r.json(); }).then(function (d) {
+            stopSummaryGenTimer();
             summaryGen.classList.add("hidden");
             if (d.ok && d.summary) summaryInput.value = d.summary;
             sendBtn.textContent = "Approve & send";
             sendBtn.disabled = false;
-        }).catch(function () { });
+        }).catch(function () {
+            stopSummaryGenTimer();
+            summaryGen.classList.add("hidden");
+        });
     });
 
     // Add search
@@ -812,15 +963,39 @@ const SCRIPT = `
         if (e.key === "Enter" && addInput.value.trim()) {
             var q = addInput.value.trim();
             addInput.value = "";
+
+            // Show inline loading indicator while search is in progress
+            var loadingCard = document.createElement("div");
+            loadingCard.className = "result-card";
+            loadingCard.setAttribute("data-loading", "true");
+            loadingCard.innerHTML = '<div class="result-card-header">' +
+                '<div class="result-card-check"></div>' +
+                '<div>' +
+                '<div class="result-card-query">' + escapeHtml(q) + '</div>' +
+                '<div class="result-card-provider" style="display:flex;align-items:center;gap:8px">' +
+                '<div class="summary-spinner" style="width:14px;height:14px;border-width:1.5px"></div>' +
+                '<span>Searching\u2026</span></div>' +
+                '</div></div>';
+            resultCards.appendChild(loadingCard);
+
             fetch(BASE + "/search", {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token: TOKEN, query: q })
             }).then(function (r) { return r.json(); }).then(function (d) {
+                loadingCard.remove();
                 if (d.ok && d.queryIndex !== undefined && !d.error) {
                     addResultCard(d.queryIndex, d);
                     totalResults++;
+                    // Refresh send button state for newly added results
+                    if (state === "selection") {
+                        updateSendButton();
+                    }
+                } else if (d.error) {
+                    addErrorCard(d.queryIndex || totalResults, { query: q, error: d.error });
                 }
-            }).catch(function () { });
+            }).catch(function () {
+                loadingCard.remove();
+            });
         }
     });
 

@@ -164,6 +164,8 @@ export function startCuratorServer(
     let nextQueryIndex = queries.length;
     let summarizeAbortController: AbortController | null = null;
     let summarizeRequestSeq = 0;
+    // Track active summarize call so watchdog skips stale detection during AI generation
+    let summarizing = false;
     let sseKeepalive: NodeJS.Timeout | null = null;
 
     const abortInFlightSummarize = (): void => {
@@ -415,6 +417,10 @@ export function startCuratorServer(
                 summarizeAbortController = controller;
                 const requestId = ++summarizeRequestSeq;
 
+                // Mark summarize as active so watchdog skips stale detection
+                summarizing = true;
+                touchHeartbeat();
+
                 try {
                     const result = await callbacks.onSummarize(
                         parsed.indices,
@@ -429,6 +435,7 @@ export function startCuratorServer(
                         });
                         return;
                     }
+                    touchHeartbeat();
                     sendJson(res, 200, {
                         ok: true,
                         summary: result.summary,
@@ -440,6 +447,7 @@ export function startCuratorServer(
                     const status = controller.signal.aborted ? 409 : 500;
                     sendJson(res, status, { ok: false, error: message });
                 } finally {
+                    summarizing = false;
                     if (summarizeAbortController === controller) {
                         summarizeAbortController = null;
                     }
@@ -579,6 +587,12 @@ export function startCuratorServer(
 
             watchdog = setInterval(() => {
                 if (completed || !browserConnected) return;
+                // Skip stale detection while summarize is generating — CrofAI reasoning
+                // models can take 60+ seconds and the browser cannot heartbeat during that time
+                if (summarizing) {
+                    touchHeartbeat();
+                    return;
+                }
                 if (Date.now() - lastHeartbeatAt <= STALE_THRESHOLD_MS) return;
                 if (!markCompleted()) return;
                 setImmediate(() => callbacks.onCancel("stale"));

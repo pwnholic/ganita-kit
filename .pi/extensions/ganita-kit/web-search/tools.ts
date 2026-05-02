@@ -555,13 +555,17 @@ export function register(pi: ExtensionAPI): void {
             "Set workflow to 'none' to skip curation and return raw results. " +
             "Provider auto-selects: Exa direct API (with key) or Exa MCP (zero config, no key needed).",
         promptSnippet:
-            "Use for web research questions. Prefer {queries:[...]} with 2-4 varied angles over a single query for broader coverage.",
+            "Use for web research. Decompose topics into 3-5 precise sub-concept queries using domain vocabulary. Never append years. Never submit vague queries.",
         promptGuidelines: [
-            "Use web_search when you need to find information on the web.",
-            "For research tasks, prefer 'queries' with 2-4 varied angles over a single 'query' for broader coverage.",
+            "DECOMPOSE BEFORE SEARCHING. Never submit a single monolithic query. Break the topic into 3-5 precise sub-concept queries and pass them via 'queries'.",
+            "NEVER append the current year to a query. Years bias results toward news and bury foundational sources.",
+            "NEVER submit vague, high-level queries like 'X explained' or 'how does X work'. Use the vocabulary of the domain — the words that appear in papers and technical docs, not headlines.",
+            "USE DOMAIN VOCABULARY. If you don't yet know the precise terminology, use the first search to find it, then use that terminology in every subsequent query.",
+            "TARGET AUTHORITATIVE SOURCES. For technical research, use domainFilter to target arxiv.org, lesswrong.com, or specific author pages. Academic and technical sources beat news articles for depth.",
+            "ITERATE. Extract terminology from results and use it in follow-up queries. Research via search is a loop — run 3-5 queries per topic, each more precise than the last.",
+            "A query is acceptable if and only if a domain expert would recognize it as a precise technical question. If a journalist could have written the same query, rewrite it.",
             "Set includeContent to true when you need the full text of source pages, not just snippets.",
             "Set workflow to 'none' to skip the interactive curator browser.",
-            "Works without any API key via Exa MCP. Add exaApiKey to ~/.pi/ganita-kit.json for direct API access.",
         ],
         parameters: Type.Object({
             query: Type.Optional(
@@ -574,7 +578,10 @@ export function register(pi: ExtensionAPI): void {
                 Type.Array(
                     Type.String({
                         description:
-                            "Multiple queries searched in sequence. Vary phrasing, scope, and angle across 2-4 queries to maximize coverage.",
+                            "Decomposed sub-concept queries searched in sequence. Each query must use domain vocabulary and target a specific facet of the topic. " +
+                            "Do NOT append years. Do NOT submit vague queries. Example: researching prediction markets -> " +
+                            "['proper scoring rules elicitation truthful reporting', 'logarithmic market scoring rule Robin Hanson', " +
+                            "'Kelly criterion bankroll growth probability markets', 'Bayesian aggregation mechanism design prediction markets']",
                     }),
                 ),
             ),
