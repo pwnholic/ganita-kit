@@ -5,8 +5,6 @@
 export interface GanitaKitConfig {
     /** Exa API key for search. Falls back to EXA_API_KEY env var. */
     exaApiKey?: string;
-    /** CrofAI API key for summarization. Falls back to CROFAI_API_KEY env var. */
-    crofAiKey?: string;
     /** Gemini API key. Falls back to GEMINI_API_KEY env var. */
     geminiApiKey?: string;
     /** Chrome profile name for cookie extraction (default: "Default"). */
@@ -38,24 +36,6 @@ export interface GanitaKitConfig {
         maxBodySize?: number;
         /** Fallback timeout for curator auto-submit in ms (default: 120000). */
         curatorTimeoutMs?: number;
-    };
-
-    /** CrofAI summarization configuration. */
-    crof?: {
-        /** API base URL (default: https://crof.ai/v1). */
-        baseUrl?: string;
-        /** Default model for summarization (default: kimi-k2.6-precision). */
-        defaultModel?: string;
-        /** Fallback models in order (default: kimi-k2.5, glm-5.1-precision, deepseek-v3.2). */
-        fallbackModels?: string[];
-        /** Maximum output tokens (default: 8192). */
-        maxTokens?: number;
-        /** Temperature for generation (default: 0.15). */
-        temperature?: number;
-        /** Top-p sampling (default: 0.9). */
-        topP?: number;
-        /** Repetition penalty (default: 1.05). */
-        repetitionPenalty?: number;
     };
 
     /** Exa search provider configuration. */
@@ -116,7 +96,6 @@ export interface GanitaKitConfig {
 /** Default values for all config fields. */
 export const DEFAULTS: Required<GanitaKitConfig> = {
     exaApiKey: "",
-    crofAiKey: "",
     geminiApiKey: "",
     chromeProfile: "Default",
     search: {
@@ -132,15 +111,6 @@ export const DEFAULTS: Required<GanitaKitConfig> = {
         watchdogIntervalMs: 2_000,
         maxBodySize: 64 * 1024,
         curatorTimeoutMs: 120_000,
-    },
-    crof: {
-        baseUrl: "https://crof.ai/v1",
-        defaultModel: "kimi-k2.6-precision",
-        fallbackModels: ["kimi-k2.5", "glm-5.1-precision", "deepseek-v3.2"],
-        maxTokens: 8192,
-        temperature: 0.15,
-        topP: 0.9,
-        repetitionPenalty: 1.05,
     },
     exa: {
         monthlyBudget: 1000,

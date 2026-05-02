@@ -33,23 +33,20 @@ function deepMerge(
 ): Required<GanitaKitConfig> {
     const result: Required<GanitaKitConfig> = {
         exaApiKey: defaults.exaApiKey,
-        crofAiKey: defaults.crofAiKey,
         geminiApiKey: defaults.geminiApiKey,
         chromeProfile: defaults.chromeProfile,
         search: { ...defaults.search },
         curator: { ...defaults.curator },
-        crof: { ...defaults.crof },
         exa: { ...defaults.exa },
         cli: { ...defaults.cli },
         gemini: { ...defaults.gemini },
     };
 
     if (overrides.exaApiKey !== undefined) result.exaApiKey = overrides.exaApiKey;
-    if (overrides.crofAiKey !== undefined) result.crofAiKey = overrides.crofAiKey;
     if (overrides.geminiApiKey !== undefined) result.geminiApiKey = overrides.geminiApiKey;
     if (overrides.chromeProfile !== undefined) result.chromeProfile = overrides.chromeProfile;
 
-    const sections = ["search", "curator", "crof", "exa", "cli", "gemini"] as const;
+    const sections = ["search", "curator", "exa", "cli", "gemini"] as const;
     for (const section of sections) {
         const overrideSection = overrides[section];
         if (overrideSection) {

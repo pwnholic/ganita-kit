@@ -18,13 +18,6 @@ export function getExaApiKey(): string | null {
     return normalizeApiKey(process.env["EXA_API_KEY"]) ?? normalizeApiKey(loadConfig().exaApiKey);
 }
 
-/** Get CrofAI API key. Checks CROFAI_API_KEY env var first, then config file. */
-export function getCrofaAiKey(): string | null {
-    return (
-        normalizeApiKey(process.env["CROFAI_API_KEY"]) ?? normalizeApiKey(loadConfig().crofAiKey)
-    );
-}
-
 /** Get Gemini API key. Checks GEMINI_API_KEY env var first, then config file. */
 export function getGeminiApiKey(): string | null {
     return (

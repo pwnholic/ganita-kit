@@ -5,25 +5,23 @@ import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-age
 import { Type } from "typebox";
 import { loadConfig } from "../config/loader.js";
 import { hasBinary } from "../config/runtime.js";
-import { summarizeWithAgent } from "../shared/summarize.js";
-import type { CuratorServerHandle } from "../types/curator.js";
-import type { SearchResult, SummaryGenerationContext } from "../types/search.js";
-import { startCuratorServer } from "../ui/curator/server.js";
-import { callExaMcp, searchWithExa } from "./provider/exa.js";
 import {
     buildDeterministicSummary,
     buildSummaryPrompt,
-    generateSummaryDraft,
-    type QueryResultData,
-} from "./summary.js";
+    summarizeWithAgent,
+} from "../shared/summarize.js";
+import type { CuratorServerHandle } from "../types/curator.js";
+import type { QueryResultData, SearchResult } from "../types/search.js";
+import { startCuratorServer } from "../ui/curator/server.js";
+import { callExaMcp, searchWithExa } from "./provider/exa.js";
 
 // ── Runtime config ─────────────────────────────────────────
 
 const cfg = loadConfig();
-const searchCfg = cfg.search!;
-const curatorCfg = cfg.curator!;
-const EXTRACT_TIMEOUT = searchCfg.extractTimeoutMs!;
-const MAX_WEB_SEARCH_OUTPUT = searchCfg.maxOutputChars!;
+const searchCfg = cfg.search;
+const curatorCfg = cfg.curator;
+const EXTRACT_TIMEOUT = searchCfg.extractTimeoutMs ?? 60_000;
+const MAX_WEB_SEARCH_OUTPUT = searchCfg.maxOutputChars ?? 100_000;
 
 /** Maximum MCP response before truncation (code_search). */
 const MAX_CODE_SEARCH_OUTPUT = 50_000;
@@ -272,10 +270,6 @@ async function executeWithCurator(
     _signal: AbortSignal | undefined,
     ctx: ExtensionContext,
 ): Promise<WebSearchToolResult> {
-    const summaryContext: SummaryGenerationContext = {
-        model: ctx.model,
-        modelRegistry: ctx.modelRegistry,
-    };
     const searchResults = new Map<number, QueryResultData>();
     const searchAbort = new AbortController();
     const sessionToken = randomUUID();
@@ -376,18 +370,10 @@ async function executeWithCurator(
                             };
                         }
                     } catch {
-                        // Agent failed — fall through to CrofAI
+                        // Agent failed — fall through to deterministic
                     }
 
-                    try {
-                        return await generateSummaryDraft(
-                            selected,
-                            summaryContext,
-                            summarizeSignal,
-                        );
-                    } catch {
-                        return buildDeterministicSummary(selected);
-                    }
+                    return buildDeterministicSummary(selected);
                 },
                 async onRewriteQuery(query: string, _rewriteSignal: AbortSignal) {
                     return query;
@@ -490,7 +476,7 @@ async function executeWithCurator(
                     finish(buildSearchReturnFromResults(searchResults, queryList, true));
                 }
                 resolve(buildSearchReturnFromResults(searchResults, queryList, true));
-            }, curatorCfg.curatorTimeoutMs!);
+            }, curatorCfg.curatorTimeoutMs ?? 120_000);
             // Clean up timeout if resultPromise resolves first
             resultPromise.finally(() => clearTimeout(timeoutId)).catch(() => {});
         });

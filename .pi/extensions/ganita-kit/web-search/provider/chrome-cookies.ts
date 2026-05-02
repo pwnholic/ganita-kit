@@ -265,6 +265,7 @@ function readLinuxPassword(secretToolApp: string | undefined): Promise<string> {
 // biome-ignore lint/suspicious/noExplicitAny: dynamic SQLite API
 let sqliteModule: any = null;
 
+// biome-ignore lint/suspicious/noExplicitAny: dynamic SQLite API
 async function importSqlite(): Promise<any> {
     if (sqliteModule) return sqliteModule;
     const orig = process.emitWarning.bind(process);

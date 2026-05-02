@@ -1,5 +1,3 @@
-import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
-
 /** A single search result from a search provider. */
 export interface SearchResult {
     title: string;
@@ -25,9 +23,6 @@ export interface SearchOptions {
 export interface ExaSearchOptions extends SearchOptions {
     includeContent?: boolean;
 }
-
-/** Context needed for summary generation. */
-export type SummaryGenerationContext = Pick<ExtensionContext, "model" | "modelRegistry">;
 
 /** Metadata about a generated summary. */
 export interface SummaryMeta {

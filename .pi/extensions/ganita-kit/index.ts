@@ -22,9 +22,9 @@ import { register as registerWebSearchTools } from "./web-search/tools.js";
  * @param pi - The Pi extension API.
  */
 export default function (pi: ExtensionAPI): void {
-	registerWebclaw(pi);
-	registerWebSearchTools(pi);
-	registerBloks(pi);
-	registerTldr(pi);
-	registerFastedit(pi);
+    registerWebclaw(pi);
+    registerWebSearchTools(pi);
+    registerBloks(pi);
+    registerTldr(pi);
+    registerFastedit(pi);
 }

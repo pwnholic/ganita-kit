@@ -12,12 +12,11 @@ import { generateCuratorPage } from "./pages.js";
 // ── Runtime config ─────────────────────────────────────────
 
 const cfg = loadConfig();
-// Non-null assertion: cfg.curator has defaults from loadConfig
-const curatorCfg = cfg.curator!;
-const STALE_THRESHOLD_MS = curatorCfg.staleThresholdMs!;
-const DISCONNECT_GRACE_MS = curatorCfg.disconnectGraceMs!;
-const WATCHDOG_INTERVAL_MS = curatorCfg.watchdogIntervalMs!;
-const MAX_BODY_SIZE = curatorCfg.maxBodySize!;
+const curatorCfg = cfg.curator;
+const STALE_THRESHOLD_MS = curatorCfg.staleThresholdMs ?? 30_000;
+const DISCONNECT_GRACE_MS = curatorCfg.disconnectGraceMs ?? 5_000;
+const WATCHDOG_INTERVAL_MS = curatorCfg.watchdogIntervalMs ?? 2_000;
+const MAX_BODY_SIZE = curatorCfg.maxBodySize ?? 65_536;
 
 // ── Types ──────────────────────────────────────────────────
 
