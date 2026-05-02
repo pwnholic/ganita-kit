@@ -196,6 +196,44 @@ function estimateTokens(text: string): number {
     return trimmed.length === 0 ? 0 : Math.max(1, Math.ceil(trimmed.length / 4));
 }
 
+/** Format a single query result line for the deterministic summary. */
+function formatResultLine(
+    result: QueryResultData,
+    seenUrls: Set<string>,
+    sourceUrls: string[],
+): string {
+    const answer = result.answer.replace(/\s+/g, " ").trim();
+    const preview =
+        answer.length > ANSWER_PREVIEW_LENGTH
+            ? `${answer.slice(0, ANSWER_PREVIEW_LENGTH - 3)}...`
+            : answer;
+
+    for (const source of result.results) {
+        if (!seenUrls.has(source.url)) {
+            seenUrls.add(source.url);
+            sourceUrls.push(source.url);
+        }
+    }
+
+    return preview
+        ? `- ${result.query}: ${preview}`
+        : `- ${result.query}: returned ${result.results.length} source(s) without answer text.`;
+}
+
+/** Append sources section to the summary lines. */
+function appendSourceLines(lines: string[], sourceUrls: string[]): void {
+    if (sourceUrls.length === 0) {
+        lines.push("- None");
+        return;
+    }
+    for (const url of sourceUrls.slice(0, MAX_SOURCE_URLS)) {
+        lines.push(`- ${url}`);
+    }
+    if (sourceUrls.length > MAX_SOURCE_URLS) {
+        lines.push(`- … and ${sourceUrls.length - MAX_SOURCE_URLS} more`);
+    }
+}
+
 /**
  * Produces a structured plain-text summary without any AI call.
  * Used when the agent-based summarization is unavailable or fails.
@@ -232,25 +270,7 @@ export function buildDeterministicSummary(results: QueryResultData[]): SummaryRe
         }
 
         successCount += 1;
-
-        const answer = result.answer.replace(/\s+/g, " ").trim();
-        const preview =
-            answer.length > ANSWER_PREVIEW_LENGTH
-                ? `${answer.slice(0, ANSWER_PREVIEW_LENGTH - 3)}...`
-                : answer;
-
-        lines.push(
-            preview
-                ? `- ${result.query}: ${preview}`
-                : `- ${result.query}: returned ${result.results.length} source(s) without answer text.`,
-        );
-
-        for (const source of result.results) {
-            if (!seenUrls.has(source.url)) {
-                seenUrls.add(source.url);
-                sourceUrls.push(source.url);
-            }
-        }
+        lines.push(formatResultLine(result, seenUrls, sourceUrls));
     }
 
     lines.push(
@@ -260,16 +280,7 @@ export function buildDeterministicSummary(results: QueryResultData[]): SummaryRe
         "Sources",
     );
 
-    if (sourceUrls.length === 0) {
-        lines.push("- None");
-    } else {
-        for (const url of sourceUrls.slice(0, MAX_SOURCE_URLS)) {
-            lines.push(`- ${url}`);
-        }
-        if (sourceUrls.length > MAX_SOURCE_URLS) {
-            lines.push(`- … and ${sourceUrls.length - MAX_SOURCE_URLS} more`);
-        }
-    }
+    appendSourceLines(lines, sourceUrls);
 
     const summary = lines.join("\n").trim();
     return {

@@ -297,13 +297,9 @@ function getNestedValue(value: unknown, pathParts: number[]): unknown {
     return current;
 }
 
-function parseStreamGenerateResponse(rawText: string): GeminiWebResult {
-    const responseJson = JSON.parse(trimJsonEnvelope(rawText));
-    const errorCode = extractErrorCode(responseJson);
-
+/** Extract the response body from the stream parts array. */
+function extractBodyFromResponse(responseJson: unknown): unknown {
     const parts = Array.isArray(responseJson) ? responseJson : [];
-    let body: unknown = null;
-
     for (let i = 0; i < parts.length; i++) {
         const partBody = getNestedValue(parts[i], [2]);
         if (!partBody || typeof partBody !== "string") continue;
@@ -311,14 +307,19 @@ function parseStreamGenerateResponse(rawText: string): GeminiWebResult {
             const parsed = JSON.parse(partBody);
             const candidateList = getNestedValue(parsed, [4]);
             if (Array.isArray(candidateList) && (candidateList as unknown[]).length > 0) {
-                body = parsed;
-                break;
+                return parsed;
             }
         } catch {
             // Ignore parse errors
         }
     }
+    return null;
+}
 
+function parseStreamGenerateResponse(rawText: string): GeminiWebResult {
+    const responseJson = JSON.parse(trimJsonEnvelope(rawText));
+    const errorCode = extractErrorCode(responseJson);
+    const body = extractBodyFromResponse(responseJson);
     const candidateList = getNestedValue(body, [4]);
     const firstCandidate = Array.isArray(candidateList)
         ? (candidateList as unknown[])[0]

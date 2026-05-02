@@ -27,7 +27,9 @@ export function register(pi: ExtensionAPI): void {
         signal: AbortSignal | undefined,
         timeout?: number,
     ): Promise<ToolResult> {
-        return execCli(piRef!, "bloks", args, signal, timeout ?? getDefaultTimeout());
+        const pi = piRef;
+        if (!pi) throw new Error("register() must be called before executing bloks tools");
+        return execCli(pi, "bloks", args, signal, timeout ?? getDefaultTimeout());
     }
 
     // =====================================================
