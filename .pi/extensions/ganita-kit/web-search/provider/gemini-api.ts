@@ -2,7 +2,7 @@
  * Gemini API provider — uses API key for search with Google grounding.
  * Falls back to Gemini Web (cookie-based) when API key is not configured.
  */
-import { getGeminiApiKey } from "../../config/config.js";
+import { getGeminiApiKey } from "../../config/runtime.js";
 import type { SearchResponse } from "../../types/search.js";
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta";

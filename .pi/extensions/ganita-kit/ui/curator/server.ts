@@ -1,5 +1,5 @@
 import http, { type IncomingMessage, type ServerResponse } from "node:http";
-import { loadConfig } from "../../config/config.js";
+import { loadConfig } from "../../config/loader.js";
 import type {
     CuratorServerCallbacks,
     CuratorServerHandle,

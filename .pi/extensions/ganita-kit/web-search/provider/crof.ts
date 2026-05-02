@@ -6,7 +6,8 @@
  * All configurable values come from ~/.pi/ganita-kit.json
  * with sensible defaults defined in config/config.ts.
  */
-import { getCrofaAiKey, loadConfig } from "../../config/config.js";
+import { loadConfig } from "../../config/loader.js";
+import { getCrofaAiKey } from "../../config/runtime.js";
 
 const cfg = loadConfig();
 const CROF = cfg.crof!;

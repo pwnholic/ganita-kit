@@ -10,7 +10,7 @@ import { createDecipheriv, pbkdf2Sync } from "node:crypto";
 import { copyFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { homedir, platform, tmpdir } from "node:os";
 import { join } from "node:path";
-import { getChromeProfile } from "../../config/config.js";
+import { getChromeProfile } from "../../config/runtime.js";
 
 // ── Types ──────────────────────────────────────────────────
 

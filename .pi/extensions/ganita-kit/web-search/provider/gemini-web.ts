@@ -1,4 +1,4 @@
-import { getGeminiApiKey } from "../../config/config.js";
+import { getGeminiApiKey } from "../../config/runtime.js";
 import type { SearchResponse, SearchResult } from "../../types/search.js";
 import { type CookieMap, getGoogleCookies } from "./chrome-cookies.js";
 

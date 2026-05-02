@@ -313,7 +313,7 @@ This project uses Biome for formatting and linting. Do not fight the formatter.
 
 - Do not add ESLint or Prettier configs.
 - Do not disable Biome rules inline unless there is a documented reason in a comment above the suppression.
-- Run `biome check --apply` before considering any file done.
+- Run `biome check --fix` before considering any file done.
 
 ---
 

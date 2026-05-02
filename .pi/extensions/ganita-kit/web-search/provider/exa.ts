@@ -1,7 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
-import { getExaApiKey } from "../../config/config.js";
+import {
+    getExaApiKey,
+    getExaMonthlyBudget,
+    getExaWarningThreshold,
+    readExaUsage,
+    writeExaUsage,
+} from "../../config/runtime.js";
 import type { ExaSearchOptions, SearchResponse } from "../../types/search.js";
 
 // ── Constants ──────────────────────────────────────────────
@@ -9,17 +12,9 @@ import type { ExaSearchOptions, SearchResponse } from "../../types/search.js";
 const EXA_ANSWER_URL = "https://api.exa.ai/answer";
 const EXA_SEARCH_URL = "https://api.exa.ai/search";
 const EXA_MCP_URL = "https://mcp.exa.ai/mcp";
-const USAGE_PATH = join(homedir(), ".pi", "exa-usage.json");
-const MONTHLY_LIMIT = 1000;
-const WARNING_THRESHOLD = 800;
 const REQUEST_TIMEOUT_MS = 60_000;
 
 // ── Internal types ─────────────────────────────────────────
-
-interface ExaUsage {
-    month: string;
-    count: number;
-}
 
 interface ExaAnswerResponse {
     answer?: string;
@@ -65,60 +60,24 @@ export type ExaSearchResultType = SearchResponse | { exhausted: true } | null;
 
 let warnedMonth: string | null = null;
 
-function getCurrentMonth(): string {
-    return new Date().toISOString().slice(0, 7);
-}
-
-function isExaUsageLike(value: unknown): value is { month: string; count: number } {
-    if (!value || typeof value !== "object") return false;
-    const obj = value as Record<string, unknown>;
-    // biome-ignore lint/complexity/useLiteralKeys: noPropertyAccessFromIndexSignature requires bracket notation
-    const month = obj["month"];
-    // biome-ignore lint/complexity/useLiteralKeys: noPropertyAccessFromIndexSignature requires bracket notation
-    const count = obj["count"];
-    return typeof month === "string" && typeof count === "number";
-}
-
-function normalizeUsage(raw: unknown): ExaUsage {
-    const month = getCurrentMonth();
-    if (!isExaUsageLike(raw)) return { month, count: 0 };
-    if (!Number.isFinite(raw.count)) return { month, count: 0 };
-    if (raw.month !== month) return { month, count: 0 };
-    return { month: raw.month, count: Math.max(0, Math.floor(raw.count)) };
-}
-
-function readUsage(): ExaUsage {
-    if (!existsSync(USAGE_PATH)) return { month: getCurrentMonth(), count: 0 };
-    const raw = readFileSync(USAGE_PATH, "utf-8");
-    try {
-        return normalizeUsage(JSON.parse(raw));
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        throw new Error(`Failed to parse ${USAGE_PATH}: ${message}`);
-    }
-}
-
-function writeUsage(usage: ExaUsage): void {
-    const dir = join(homedir(), ".pi");
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    writeFileSync(USAGE_PATH, `${JSON.stringify(usage, null, 2)}\n`);
-}
-
 /**
  * Reserve one request from the monthly budget.
  * Returns { exhausted: true } if the limit is reached, null otherwise.
  */
 function reserveRequestBudget(): { exhausted: true } | null {
-    const usage = readUsage();
-    if (usage.count >= MONTHLY_LIMIT) {
+    const usage = readExaUsage();
+    const monthlyLimit = getExaMonthlyBudget();
+    const warningThreshold = getExaWarningThreshold();
+
+    if (usage.count >= monthlyLimit) {
         return { exhausted: true };
     }
     const nextCount = usage.count + 1;
-    if (nextCount >= WARNING_THRESHOLD && warnedMonth !== usage.month) {
+    if (nextCount >= warningThreshold && warnedMonth !== usage.month) {
         warnedMonth = usage.month;
-        console.error(`Exa usage warning: ${nextCount}/${MONTHLY_LIMIT} monthly requests used.`);
+        console.error(`Exa usage warning: ${nextCount}/${monthlyLimit} monthly requests used.`);
     }
-    writeUsage({ month: usage.month, count: nextCount });
+    writeExaUsage({ month: usage.month, count: nextCount });
     return null;
 }
 
@@ -496,8 +455,8 @@ async function searchWithExaApi(
 /** Check whether Exa is available (API key present or MCP usable). */
 export function isExaAvailable(): boolean {
     if (getExaApiKey()) {
-        const usage = readUsage();
-        return usage.count < MONTHLY_LIMIT;
+        const usage = readExaUsage();
+        return usage.count < getExaMonthlyBudget();
     }
     // MCP is always available without a key
     return true;
