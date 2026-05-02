@@ -91,6 +91,22 @@ export interface GanitaKitConfig {
         /** Request timeout in ms (default: 60000). */
         timeoutMs?: number;
     };
+
+    /** Google Surf MCP configuration. */
+    surf?: {
+        /** Run Chrome in headless mode (default: true). */
+        headless?: boolean;
+        /** Idle ms before closing browser contexts (default: 30000). 0 disables. */
+        idleCloseMs?: number;
+        /** Path to Chrome binary. Auto-detected if unset. */
+        chromePath?: string;
+        /** Root directory for browser profiles (default: ~/.google-surf-mcp). */
+        profileRoot?: string;
+        /** Browser locale (default: en-US). */
+        locale?: string;
+        /** Browser timezone (default: system tz). */
+        tz?: string;
+    };
 }
 
 /** Default values for all config fields. */
@@ -138,5 +154,13 @@ export const DEFAULTS: Required<GanitaKitConfig> = {
         defaultModel: "gemini-3-flash-preview",
         webModel: "gemini-2.5-flash",
         timeoutMs: 60_000,
+    },
+    surf: {
+        headless: true,
+        idleCloseMs: 30_000,
+        chromePath: "",
+        profileRoot: "",
+        locale: "en-US",
+        tz: "",
     },
 };

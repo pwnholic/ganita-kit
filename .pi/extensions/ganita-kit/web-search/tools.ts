@@ -745,4 +745,160 @@ export function register(pi: ExtensionAPI): void {
             }
         },
     });
+
+    // ── google_surf tools ───────────────────────────────────
+
+    pi.registerTool({
+        name: "google_surf_search",
+        label: "Google Surf Search",
+        description:
+            "Search Google via Playwright browser. No API key needed. " +
+            "Anti-bot, handles CAPTCHA automatically. Returns title/url/snippet. " +
+            "First call is slower (~4s setup). Requires Chrome installed + one-time bootstrap.",
+        promptSnippet: "Search Google without API key",
+        promptGuidelines: [
+            "Use google_surf_search when you need Google search results and have no Exa API key.",
+            "First call per session is slower (~4s) — subsequent calls are ~1.5s.",
+            "For full article content from results, use google_surf_search_extract instead.",
+            "Requires Chrome/Chromium installed and one-time bootstrap: npx google-surf-mcp bootstrap",
+        ],
+        parameters: Type.Object({
+            query: Type.String({ description: "Search query" }),
+            limit: Type.Optional(
+                Type.Number({
+                    description: "Max results (default 10, max 20)",
+                    minimum: 1,
+                    maximum: 20,
+                }),
+            ),
+        }),
+        async execute(_toolCallId, params, _signal) {
+            const { surfSearch } = await import("../web-search/provider/surf-mcp.js");
+            try {
+                const result = await surfSearch(params.query, params.limit);
+                const formatted = result.results
+                    .map((r, i) => `${i + 1}. [${r.title}](${r.url})\n   ${r.description}`)
+                    .join("\n\n");
+                return {
+                    content: [{ type: "text", text: formatted || "No results found." }],
+                    details: {},
+                };
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                return {
+                    content: [{ type: "text", text: `Error: ${message}` }],
+                    details: {},
+                };
+            }
+        },
+    });
+
+    pi.registerTool({
+        name: "google_surf_extract",
+        label: "Google Surf Extract",
+        description:
+            "Fetch a URL and extract clean article markdown. " +
+            "Uses Mozilla Readability with text fallback. No API key needed. " +
+            "Best-effort: failures return error instead of throwing.",
+        promptSnippet: "Extract URL content without API key",
+        promptGuidelines: [
+            "Use google_surf_extract when you need URL content without API key or webclaw.",
+            "Blocks private/loopback addresses by default (SSRF guard).",
+            "For combined search + extract, use google_surf_search_extract.",
+        ],
+        parameters: Type.Object({
+            url: Type.String({ description: "URL to fetch and extract" }),
+            max_chars: Type.Optional(
+                Type.Number({
+                    description: "Truncate content to this many chars (default 8000, max 50000)",
+                    minimum: 200,
+                    maximum: 50000,
+                }),
+            ),
+        }),
+        async execute(_toolCallId, params, _signal) {
+            const { surfExtract } = await import("../web-search/provider/surf-mcp.js");
+            try {
+                const result = await surfExtract(params.url, params.max_chars);
+                if (result.error) {
+                    return {
+                        content: [{ type: "text", text: `Error: ${result.error}` }],
+                        details: {},
+                    };
+                }
+                return {
+                    content: [{ type: "text", text: result.content ?? "No content extracted." }],
+                    details: {},
+                };
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                return { content: [{ type: "text", text: `Error: ${message}` }], details: {} };
+            }
+        },
+    });
+
+    pi.registerTool({
+        name: "google_surf_search_extract",
+        label: "Google Surf Search + Extract",
+        description:
+            "Google search + parallel content extraction in one call. " +
+            "Returns SERP results enriched with article markdown. " +
+            "Slower than search alone but gives full page content without extra steps.",
+        promptSnippet: "Search Google and extract full article content",
+        promptGuidelines: [
+            "Use google_surf_search_extract when you need both search results and full article content.",
+            "Replaces the usual search + fetch combo in a single call.",
+            "Per-page failures are isolated (returned as error field).",
+            "Slower than search alone (~2-5s extra for content extraction).",
+        ],
+        parameters: Type.Object({
+            query: Type.String({ description: "Search query" }),
+            limit: Type.Optional(
+                Type.Number({
+                    description: "Number of results to extract (default 5, max 10)",
+                    minimum: 1,
+                    maximum: 10,
+                }),
+            ),
+            max_chars: Type.Optional(
+                Type.Number({
+                    description: "Truncate each result content (default 8000, max 20000)",
+                    minimum: 200,
+                    maximum: 20000,
+                }),
+            ),
+        }),
+        async execute(_toolCallId, params, _signal) {
+            const { surfSearchExtract } = await import("../web-search/provider/surf-mcp.js");
+            try {
+                const result = await surfSearchExtract(
+                    params.query,
+                    params.limit,
+                    params.max_chars,
+                );
+                if (result.error) {
+                    return {
+                        content: [{ type: "text", text: `Error: ${result.error}` }],
+                        details: {},
+                    };
+                }
+                const formatted = result.results
+                    .map(
+                        (r, i) =>
+                            `${i + 1}. [${r.title}](${r.url})\n   ${r.description || ""}\n   ${r.error ? `⚠ Error: ${r.error}` : r.content ? `📄 ${r.content.slice(0, 500)}${r.content.length > 500 ? "..." : ""}` : ""}`,
+                    )
+                    .join("\n\n");
+                return {
+                    content: [{ type: "text", text: formatted || "No results found." }],
+                    details: {},
+                };
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                return {
+                    content: [{ type: "text", text: `Error: ${message}` }],
+                    details: {},
+                };
+            }
+        },
+    });
 }

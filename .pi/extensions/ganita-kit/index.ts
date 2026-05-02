@@ -13,12 +13,16 @@ import { register as registerWebSearchTools } from "./web-search/tools.js";
  * - **bloks** — Library knowledge management and context generation
  * - **tldr** — Code analysis (AST, call graph, dead code, health)
  * - **fastedit** — AST-aware code editing by symbol name
- * - **web_search** — Web search via Exa (API or MCP, zero-config)
+ * - **web_search** — Web search via Exa (API or MCP, zero-config) with curator UI
  * - **code_search** — Code/doc search via Exa MCP (zero-config)
+ * - **google_surf_search** — Google search via Playwright, no API key
+ * - **google_surf_extract** — URL content extraction via Playwright
+ * - **google_surf_search_extract** — Search + extract in one call
  *
  * CLI tools call their local binaries via pi.exec().
  * Web search tools call Exa API/MCP via HTTP fetch,
  * with optional content extraction via webclaw.
+ * Google Surf tools run google-surf-mcp as a subprocess via MCP JSON-RPC.
  * @param pi - The Pi extension API.
  */
 export default function (pi: ExtensionAPI): void {
@@ -27,4 +31,11 @@ export default function (pi: ExtensionAPI): void {
     registerBloks(pi);
     registerTldr(pi);
     registerFastedit(pi);
+
+    // Cleanup surf subprocess on process exit
+    process.on("exit", () => {
+        import("./web-search/provider/surf-mcp.js")
+            .then(({ stopSurf }) => stopSurf())
+            .catch(() => {});
+    });
 }
