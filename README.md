@@ -22,12 +22,12 @@ npm install
 
 The extension wraps 4 CLI tools. Each must be available on your `$PATH`:
 
-| Binary | Purpose | Install |
-|--------|---------|---------|
-| `tldr` | Code analysis (60 subcommands, 18 languages) | `npm install -g @pwnholic/tldr-cli` |
-| `webclaw` | Web scraping, crawling, extraction | `npm install -g webclaw` |
-| `bloks` | Library indexing and knowledge retrieval | `npm install -g @pwnholic/bloks` |
-| `fastedit` | AST-aware code editing | `npm install -g @pwnholic/fastedit` |
+| Binary     | Purpose                                      | Install                             |
+| ---------- | -------------------------------------------- | ----------------------------------- |
+| `tldr`     | Code analysis (60 subcommands, 18 languages) | `npm install -g @pwnholic/tldr-cli` |
+| `webclaw`  | Web scraping, crawling, extraction           | `npm install -g webclaw`            |
+| `bloks`    | Library indexing and knowledge retrieval     | `npm install -g @pwnholic/bloks`    |
+| `fastedit` | AST-aware code editing                       | `npm install -g @pwnholic/fastedit` |
 
 Verify installation:
 
@@ -55,10 +55,10 @@ Skip this step if you do not need Google search.
 
 Most tools work without any API keys. The following are optional:
 
-| Key | Used by | Required? |
-|-----|---------|-----------|
+| Key           | Used by                            | Required?                                           |
+| ------------- | ---------------------------------- | --------------------------------------------------- |
 | `EXA_API_KEY` | `web_search` (Exa direct API mode) | No. Without it, Exa MCP mode is used (zero-config). |
-| `EXA_API_KEY` | `code_search` (Exa MCP) | No. Uses hosted MCP endpoint. |
+| `EXA_API_KEY` | `code_search` (Exa MCP)            | No. Uses hosted MCP endpoint.                       |
 
 Set via environment variable or config file (see Configuration below).
 
@@ -94,73 +94,73 @@ ganita-kit/
 
 ### Web Search (3 tools)
 
-| Tool | Description | Provider |
-|------|-------------|----------|
-| `web_search` | Search with interactive curator UI for reviewing results | Exa |
-| `code_search` | Code example and documentation search | Exa MCP |
-| `google_surf_search` | Google search via Playwright, no API key | google-surf-mcp |
+| Tool                 | Description                                              | Provider        |
+| -------------------- | -------------------------------------------------------- | --------------- |
+| `web_search`         | Search with interactive curator UI for reviewing results | Exa             |
+| `code_search`        | Code example and documentation search                    | Exa MCP         |
+| `google_surf_search` | Google search via Playwright, no API key                 | google-surf-mcp |
 
 ### Webclaw (13 tools)
 
-| Tool | Description |
-|------|-------------|
-| `webclaw_scrape` | Extract content from URL, PDF, or local file. Supports `summarize: true`. |
-| `webclaw_batch` | Extract from multiple URLs in one call |
-| `webclaw_crawl` | Crawl a website and extract content |
-| `webclaw_map` | Discover all URLs on a website |
-| `webclaw_extract` | Extract structured data via LLM |
-| `webclaw_brand` | Extract brand identity (colors, fonts, logos) |
-| `webclaw_vertical` | Site-specific structured extraction |
-| `webclaw_extractors` | List available vertical extractors |
-| `webclaw_research` | Deep research on a topic |
-| `webclaw_summarize` | Summarize a web page |
-| `webclaw_diff` | Compare page content against a snapshot |
-| `webclaw_watch` | Watch a URL for changes |
-| `webclaw_bench` | Benchmark extraction quality |
+| Tool                 | Description                                                               |
+| -------------------- | ------------------------------------------------------------------------- |
+| `webclaw_scrape`     | Extract content from URL, PDF, or local file. Supports `summarize: true`. |
+| `webclaw_batch`      | Extract from multiple URLs in one call                                    |
+| `webclaw_crawl`      | Crawl a website and extract content                                       |
+| `webclaw_map`        | Discover all URLs on a website                                            |
+| `webclaw_extract`    | Extract structured data via LLM                                           |
+| `webclaw_brand`      | Extract brand identity (colors, fonts, logos)                             |
+| `webclaw_vertical`   | Site-specific structured extraction                                       |
+| `webclaw_extractors` | List available vertical extractors                                        |
+| `webclaw_research`   | Deep research on a topic                                                  |
+| `webclaw_summarize`  | Summarize a web page                                                      |
+| `webclaw_diff`       | Compare page content against a snapshot                                   |
+| `webclaw_watch`      | Watch a URL for changes                                                   |
+| `webclaw_bench`      | Benchmark extraction quality                                              |
 
 ### Tldr (60 tools)
 
 Code analysis across 18 languages. Key categories:
 
-| Category | Example tools |
-|----------|--------------|
-| AST structure | `tldr_tree`, `tldr_structure`, `tldr_extract` |
-| Call graph | `tldr_calls`, `tldr_impact`, `tldr_context` |
-| Dead code | `tldr_dead`, `tldr_dead_stores` |
-| Security | `tldr_taint`, `tldr_vuln`, `tldr_secure` |
-| Quality | `tldr_complexity`, `tldr_health`, `tldr_smells`, `tldr_debt` |
-| Slicing | `tldr_slice`, `tldr_chop`, `tldr_reaching_defs` |
-| Refactoring | `tldr_fix`, `tldr_bugbot`, `tldr_change_impact` |
-| Metrics | `tldr_loc`, `tldr_halstead`, `tldr_cognitive` |
+| Category      | Example tools                                                |
+| ------------- | ------------------------------------------------------------ |
+| AST structure | `tldr_tree`, `tldr_structure`, `tldr_extract`                |
+| Call graph    | `tldr_calls`, `tldr_impact`, `tldr_context`                  |
+| Dead code     | `tldr_dead`, `tldr_dead_stores`                              |
+| Security      | `tldr_taint`, `tldr_vuln`, `tldr_secure`                     |
+| Quality       | `tldr_complexity`, `tldr_health`, `tldr_smells`, `tldr_debt` |
+| Slicing       | `tldr_slice`, `tldr_chop`, `tldr_reaching_defs`              |
+| Refactoring   | `tldr_fix`, `tldr_bugbot`, `tldr_change_impact`              |
+| Metrics       | `tldr_loc`, `tldr_halstead`, `tldr_cognitive`                |
 
 ### Bloks (22 tools)
 
 Library knowledge management:
 
-| Category | Example tools |
-|----------|--------------|
+| Category | Example tools                                                   |
+| -------- | --------------------------------------------------------------- |
 | Indexing | `bloks_add`, `bloks_add_local`, `bloks_remove`, `bloks_refresh` |
-| Search | `bloks_search`, `bloks_card`, `bloks_deck`, `bloks_recipe` |
-| Context | `bloks_context`, `bloks_modules`, `bloks_index_url` |
-| Feedback | `bloks_learn`, `bloks_ack`, `bloks_nack`, `bloks_stats` |
+| Search   | `bloks_search`, `bloks_card`, `bloks_deck`, `bloks_recipe`      |
+| Context  | `bloks_context`, `bloks_modules`, `bloks_index_url`             |
+| Feedback | `bloks_learn`, `bloks_ack`, `bloks_nack`, `bloks_stats`         |
 
 ### Fastedit (11 tools)
 
 AST-aware code editing:
 
-| Tool | Description |
-|------|-------------|
-| `fast_read` | Show file structure (functions, classes, line ranges) |
-| `fast_search` | Search for symbols in a codebase |
-| `fast_edit` | Edit a function or class by name |
-| `fast_batch_edit` | Multiple edits to one file |
-| `fast_multi_edit` | Edits across multiple files |
-| `fast_delete` | Delete a symbol with caller safety check |
-| `fast_move` | Move a symbol within a file |
-| `fast_rename` | Rename a symbol (AST-aware, skips strings/comments) |
-| `fast_undo` | Revert last edit |
-| `fast_diff` | Show diff between backup and current file |
-| `fast_pull` | Download the merge model for complex edits |
+| Tool              | Description                                           |
+| ----------------- | ----------------------------------------------------- |
+| `fast_read`       | Show file structure (functions, classes, line ranges) |
+| `fast_search`     | Search for symbols in a codebase                      |
+| `fast_edit`       | Edit a function or class by name                      |
+| `fast_batch_edit` | Multiple edits to one file                            |
+| `fast_multi_edit` | Edits across multiple files                           |
+| `fast_delete`     | Delete a symbol with caller safety check              |
+| `fast_move`       | Move a symbol within a file                           |
+| `fast_rename`     | Rename a symbol (AST-aware, skips strings/comments)   |
+| `fast_undo`       | Revert last edit                                      |
+| `fast_diff`       | Show diff between backup and current file             |
+| `fast_pull`       | Download the merge model for complex edits            |
 
 ## Configuration
 
@@ -198,13 +198,13 @@ All fields have sensible defaults. Only override what you need.
 
 ### Config sections
 
-| Section | Fields | Description |
-|---------|--------|-------------|
-| `search` | `defaultNumResults`, `maxResultsPerQuery`, `maxOutputChars`, `extractTimeoutMs` | Search behavior |
-| `curator` | `staleThresholdMs`, `disconnectGraceMs`, `watchdogIntervalMs`, `maxBodySize`, `curatorTimeoutMs` | Curator browser UI |
-| `exa` | `monthlyBudget`, `warningThreshold`, `apiUrl`, `mcpUrl`, `requestTimeoutMs` | Exa provider settings |
-| `surf` | `headless`, `idleCloseMs`, `chromePath`, `profileRoot`, `locale`, `tz` | Google Surf MCP settings |
-| `cli` | `maxOutputChars`, timeouts for each binary | CLI execution limits |
+| Section   | Fields                                                                                           | Description              |
+| --------- | ------------------------------------------------------------------------------------------------ | ------------------------ |
+| `search`  | `defaultNumResults`, `maxResultsPerQuery`, `maxOutputChars`, `extractTimeoutMs`                  | Search behavior          |
+| `curator` | `staleThresholdMs`, `disconnectGraceMs`, `watchdogIntervalMs`, `maxBodySize`, `curatorTimeoutMs` | Curator browser UI       |
+| `exa`     | `monthlyBudget`, `warningThreshold`, `apiUrl`, `mcpUrl`, `requestTimeoutMs`                      | Exa provider settings    |
+| `surf`    | `headless`, `idleCloseMs`, `chromePath`, `profileRoot`, `locale`, `tz`                           | Google Surf MCP settings |
+| `cli`     | `maxOutputChars`, timeouts for each binary                                                       | CLI execution limits     |
 
 ## Summarization
 
