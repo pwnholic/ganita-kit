@@ -5,12 +5,14 @@ import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-age
 import { Type } from "typebox";
 import { loadConfig } from "../config/loader.js";
 import { hasBinary } from "../config/runtime.js";
+import { summarizeWithAgent } from "../shared/summarize.js";
 import type { CuratorServerHandle } from "../types/curator.js";
 import type { SearchResult, SummaryGenerationContext } from "../types/search.js";
 import { startCuratorServer } from "../ui/curator/server.js";
 import { callExaMcp, searchWithExa } from "./provider/exa.js";
 import {
     buildDeterministicSummary,
+    buildSummaryPrompt,
     generateSummaryDraft,
     type QueryResultData,
 } from "./summary.js";
@@ -353,6 +355,30 @@ async function executeWithCurator(
                             },
                         };
                     }
+                    try {
+                        // Try agent-based summarization (Pi model, no external API)
+                        const content = buildSummaryPrompt(selected);
+                        const summary = await summarizeWithAgent({
+                            content,
+                            model: ctx.model,
+                            signal: summarizeSignal,
+                        });
+                        if (summary) {
+                            return {
+                                summary,
+                                meta: {
+                                    model: "agent",
+                                    durationMs: 0,
+                                    tokenEstimate: Math.ceil(summary.length / 4),
+                                    fallbackUsed: false,
+                                    edited: false,
+                                },
+                            };
+                        }
+                    } catch {
+                        // Agent failed — fall through to CrofAI
+                    }
+
                     try {
                         return await generateSummaryDraft(
                             selected,

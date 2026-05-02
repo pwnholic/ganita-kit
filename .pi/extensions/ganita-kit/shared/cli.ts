@@ -10,7 +10,7 @@ import { loadConfig } from "../config/loader.js";
 
 /** Get the configured max CLI output before truncation. */
 export function getMaxOutput(): number {
-	return loadConfig().cli.maxOutputChars ?? 50_000;
+    return loadConfig().cli.maxOutputChars ?? 50_000;
 }
 
 /**
@@ -20,16 +20,16 @@ export function getMaxOutput(): number {
  * @returns Original text or truncated text with a suffix notice.
  */
 export function truncate(text: string, max: number): string {
-	if (text.length <= max) return text;
-	const excess = text.length - max;
-	return `${text.slice(0, max)}\n\n... [${excess} characters truncated]`;
+    if (text.length <= max) return text;
+    const excess = text.length - max;
+    return `${text.slice(0, max)}\n\n... [${excess} characters truncated]`;
 }
 
 /** Shared tool result shape for all CLI tools. */
 export type ToolResult = {
-	content: Array<{ type: "text"; text: string }>;
-	details: Record<string, unknown>;
-	isError?: boolean;
+    content: Array<{ type: "text"; text: string }>;
+    details: Record<string, unknown>;
+    isError?: boolean;
 };
 
 /**
@@ -43,39 +43,39 @@ export type ToolResult = {
  * @returns ToolResult with stdout or error message.
  */
 export async function execCli(
-	pi: ExtensionAPI,
-	binary: string,
-	args: string[],
-	signal: AbortSignal | undefined,
-	timeout: number,
+    pi: ExtensionAPI,
+    binary: string,
+    args: string[],
+    signal: AbortSignal | undefined,
+    timeout: number,
 ): Promise<ToolResult> {
-	const result = await pi.exec(binary, args, {
-		...(signal ? { signal } : {}),
-		timeout,
-	});
+    const result = await pi.exec(binary, args, {
+        ...(signal ? { signal } : {}),
+        timeout,
+    });
 
-	if (result.killed) {
-		return {
-			content: [{ type: "text", text: "Operation cancelled." }],
-			details: {},
-		};
-	}
+    if (result.killed) {
+        return {
+            content: [{ type: "text", text: "Operation cancelled." }],
+            details: {},
+        };
+    }
 
-	if (result.code !== 0) {
-		return {
-			content: [
-				{
-					type: "text",
-					text: `${binary} error (exit ${result.code}): ${result.stderr || result.stdout}`,
-				},
-			],
-			details: {},
-			isError: true,
-		};
-	}
+    if (result.code !== 0) {
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `${binary} error (exit ${result.code}): ${result.stderr || result.stdout}`,
+                },
+            ],
+            details: {},
+            isError: true,
+        };
+    }
 
-	return {
-		content: [{ type: "text", text: truncate(result.stdout, getMaxOutput()) }],
-		details: {},
-	};
+    return {
+        content: [{ type: "text", text: truncate(result.stdout, getMaxOutput()) }],
+        details: {},
+    };
 }
