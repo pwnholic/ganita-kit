@@ -1,21 +1,19 @@
 {
     "name": "ganita-kit",
     "version": "1.0.0",
-    "description": "Unified AI agent toolkit — webclaw, bloks, tldr, fastedit as Pi extensions",
+    "description": "Unified AI agent toolkit for Pi -- webclaw, bloks, tldr, fastedit, web search, code search, Google Surf",
     "main": "./index.ts",
     "scripts": {
         "check": "biome check ./",
-        "check:apply": "biome check --fix ./",
-        "check:unsafe": "biome check --unsafe --fix ./",
-        "typecheck": "tsc --noEmit",
-        "typecheck:all": "tsc --noEmit -p tsconfig.test.json",
-        "build": "tsc",
-        "clean": "rm -rf dist",
-        "test": "vitest run",
-        "test:watch": "vitest"
+        "check:fix": "biome check --fix ./",
+        "typecheck": "tsc --noEmit"
     },
     "author": "pwnholic",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/pwnholic/ganita-kit.git"
+    },
     "type": "module",
     "keywords": [
         "pi-package"
@@ -26,13 +24,28 @@
         ]
     },
     "dependencies": {
-        "@mariozechner/pi-coding-agent": "^0.70.6",
         "google-surf-mcp": "^0.4.0"
+    },
+    "peerDependencies": {
+        "@mariozedner/pi-ai": "*",
+        "@mariozedner/pi-coding-agent": "*",
+        "typebox": "*"
+    },
+    "peerDependenciesMeta": {
+        "@mariozedner/pi-ai": {
+            "optional": true
+        },
+        "@mariozedner/pi-coding-agent": {
+            "optional": true
+        },
+        "typebox": {
+            "optional": true
+        }
     },
     "devDependencies": {
         "@biomejs/biome": "^2.4.13",
+        "@mariozechner/pi-coding-agent": "^0.70.6",
         "@types/node": "^25.6.0",
-        "typescript": "^6.0.3",
-        "vitest": "^4.1.5"
+        "typescript": "^6.0.3"
     }
 }
