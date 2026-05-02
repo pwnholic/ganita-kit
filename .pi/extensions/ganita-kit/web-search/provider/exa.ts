@@ -240,8 +240,12 @@ export async function callExaMcp(
     toolName: string,
     args: Record<string, unknown>,
     signal?: AbortSignal,
+    /** Extra tools to enable via ?tools= query param (hosted MCP default). */
+    extraTools?: string[],
 ): Promise<string> {
-    const response = await fetch(EXA_MCP_URL, {
+    const url = extraTools?.length ? `${EXA_MCP_URL}?tools=${extraTools.join(",")}` : EXA_MCP_URL;
+
+    const response = await fetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
