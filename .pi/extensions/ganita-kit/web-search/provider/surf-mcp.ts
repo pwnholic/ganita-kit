@@ -8,10 +8,7 @@
  * Lazily started on first call. The MCP process manages its own idle close
  * via SURF_IDLE_CLOSE_MS (default 30s). Restarts automatically on next call.
  *
- * Known issue: pool-based tools (extract, search_parallel, search_extract)
- * can fail if the sequential context is still holding the profile lock.
- * Workaround: sequential and pool calls are serialized — sequential context
- * is closed before pool ops, and pool is reset before sequential ops.
+ * Only exposes `search`. For content extraction, use webclaw_scrape.
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
@@ -29,15 +26,6 @@ export interface SurfSearchItem {
 export interface SurfSearchResult {
     results: SurfSearchItem[];
     elapsed_ms?: number;
-    error?: string;
-}
-
-export interface SurfExtractResult {
-    url?: string;
-    title?: string;
-    content?: string;
-    excerpt?: string;
-    length?: number;
     error?: string;
 }
 
@@ -117,7 +105,7 @@ async function ensureStarted(): Promise<void> {
             pending.clear();
         });
 
-        // Read JSON-RPC responses from stdout (proc is freshly spawned with stdio:["pipe", "pipe", "pipe"])
+        // Read JSON-RPC responses from stdout
         const stdout = proc.stdout;
         if (!stdout) throw new Error("Failed to create surf subprocess stdout");
         lineReader = createInterface({ input: stdout, crlfDelay: Number.POSITIVE_INFINITY });
@@ -227,7 +215,6 @@ async function callTool(
         const text = result?.content?.[0]?.text ?? "";
 
         if (result?.isError) {
-            // Extract error from JSON text or use raw text
             try {
                 const parsed = JSON.parse(text) as { error?: string };
                 throw new Error(parsed.error ?? text.slice(0, 200));
@@ -265,77 +252,6 @@ export async function surfSearch(
 ): Promise<SurfSearchResult> {
     const text = await callTool("search", { query, limit: Math.min(limit, 20) }, signal);
     return parseResponseText<SurfSearchResult>(text, { results: [] });
-}
-
-/**
- * Fetch URL content via surf extract (pool context).
- * Returns article markdown via Mozilla Readability + Turndown.
- */
-export async function surfExtract(
-    url: string,
-    maxChars?: number,
-    signal?: AbortSignal,
-): Promise<SurfExtractResult> {
-    const text = await callTool(
-        "extract",
-        {
-            url,
-            ...(maxChars !== undefined ? { max_chars: Math.min(maxChars, 50_000) } : {}),
-        },
-        signal,
-    );
-    return parseResponseText<SurfExtractResult>(text, { error: text.slice(0, 300) });
-}
-
-/**
- * Google search + extract content from each result.
- * Uses sequential search then sequential extract (avoids pool warm issues).
- */
-export async function surfSearchExtract(
-    query: string,
-    limit = 5,
-    maxChars?: number,
-    signal?: AbortSignal,
-): Promise<{
-    query: string;
-    results: Array<SurfSearchItem & { content?: string; error?: string }>;
-    error?: string;
-}> {
-    // Step 1: Search via sequential context
-    const searchResult = await surfSearch(query, limit, signal);
-    if (searchResult.error || searchResult.results.length === 0) {
-        return {
-            query,
-            results: [],
-            error: searchResult.error ?? "No results found",
-        };
-    }
-
-    // Step 2: Extract each URL via pool context (sequential fallback if pool fails)
-    const enriched = await Promise.all(
-        searchResult.results.map(async (r) => {
-            try {
-                const extracted = await surfExtract(r.url, maxChars, signal);
-                const item: SurfSearchItem & { content?: string; error?: string } = {
-                    title: r.title,
-                    url: r.url,
-                    description: r.description,
-                };
-                if (extracted.content) item.content = extracted.content;
-                if (extracted.error) item.error = extracted.error;
-                return item;
-            } catch (err) {
-                return {
-                    title: r.title,
-                    url: r.url,
-                    description: r.description,
-                    error: err instanceof Error ? err.message : String(err),
-                };
-            }
-        }),
-    );
-
-    return { query, results: enriched };
 }
 
 /** Stop the surf subprocess. Call on extension shutdown. */

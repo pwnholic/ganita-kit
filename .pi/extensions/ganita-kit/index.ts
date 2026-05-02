@@ -16,8 +16,6 @@ import { register as registerWebSearchTools } from "./web-search/tools.js";
  * - **web_search** — Web search via Exa (API or MCP, zero-config) with curator UI
  * - **code_search** — Code/doc search via Exa MCP (zero-config)
  * - **google_surf_search** — Google search via Playwright, no API key
- * - **google_surf_extract** — URL content extraction via Playwright
- * - **google_surf_search_extract** — Search + extract in one call
  *
  * CLI tools call their local binaries via pi.exec().
  * Web search tools call Exa API/MCP via HTTP fetch,
