@@ -5,43 +5,43 @@
  */
 
 function safeInlineJSON(data: unknown): string {
-	return JSON.stringify(data)
-		.replace(/</g, "\\u003c")
-		.replace(/>/g, "\\u003e")
-		.replace(/&/g, "\\u0026")
-		.replace(/\u2028/g, "\\u2028")
-		.replace(/\u2029/g, "\\u2029");
+    return JSON.stringify(data)
+        .replace(/</g, "\\u003c")
+        .replace(/>/g, "\\u003e")
+        .replace(/&/g, "\\u0026")
+        .replace(/\u2028/g, "\\u2028")
+        .replace(/\u2029/g, "\\u2029");
 }
 
 function buildProviderButtons(defaultProvider: string): string {
-	const providers = [{ value: "exa", label: "Exa" }];
+    const providers = [{ value: "exa", label: "Exa" }];
 
-	return providers
-		.map((p) => {
-			const isDefault = p.value === defaultProvider;
-			const classes = ["provider-btn", "idle", isDefault ? "is-default" : ""]
-				.filter(Boolean)
-				.join(" ");
-			return `<button type="button" class="${classes}" data-provider="${p.value}" data-state="idle">${p.label}</button>`;
-		})
-		.join("");
+    return providers
+        .map((p) => {
+            const isDefault = p.value === defaultProvider;
+            const classes = ["provider-btn", "idle", isDefault ? "is-default" : ""]
+                .filter(Boolean)
+                .join(" ");
+            return `<button type="button" class="${classes}" data-provider="${p.value}" data-state="idle">${p.label}</button>`;
+        })
+        .join("");
 }
 
 export function generateCuratorPage(
-	queries: string[],
-	sessionToken: string,
-	timeout: number,
-	defaultProvider: string,
+    queries: string[],
+    sessionToken: string,
+    timeout: number,
+    defaultProvider: string,
 ): string {
-	const providerButtonsHtml = buildProviderButtons(defaultProvider);
-	const inlineData = safeInlineJSON({
-		queries,
-		sessionToken,
-		timeout,
-		defaultProvider,
-	});
+    const providerButtonsHtml = buildProviderButtons(defaultProvider);
+    const inlineData = safeInlineJSON({
+        queries,
+        sessionToken,
+        timeout,
+        defaultProvider,
+    });
 
-	return `
+    return `
     <!doctype html>
     <html lang="en">
         <head>

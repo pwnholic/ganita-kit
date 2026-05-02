@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { register } from "../tools/code-search.js";
+import { register } from "../web-search/tools.js";
 import { createMockPi } from "./helpers.js";
 
 describe("code_search register", () => {

@@ -13,12 +13,12 @@ import type {
 	SummaryGenerationContext,
 } from "../types/search.js";
 import { startCuratorServer } from "../ui/curator/server.js";
-import { searchWithExa } from "../web-search/provider/exa.js";
+import { callExaMcp, searchWithExa } from "./provider/exa.js";
 import {
 	buildDeterministicSummary,
 	generateSummaryDraft,
 	type QueryResultData,
-} from "../web-search/summary.js";
+} from "./summary.js";
 
 // ── Runtime config ─────────────────────────────────────────
 
@@ -26,15 +26,18 @@ const cfg = loadConfig();
 const searchCfg = cfg.search!;
 const curatorCfg = cfg.curator!;
 const EXTRACT_TIMEOUT = searchCfg.extractTimeoutMs!;
-const MAX_OUTPUT = searchCfg.maxOutputChars!;
+const MAX_WEB_SEARCH_OUTPUT = searchCfg.maxOutputChars!;
+
+/** Maximum MCP response before truncation (code_search). */
+const MAX_CODE_SEARCH_OUTPUT = 50_000;
 
 /**
- * Truncates large CLI output to stay within token budgets.
- * @param text - Raw CLI stdout.
+ * Truncates large output to stay within token budgets.
+ * @param text - Raw response text.
  * @param max - Maximum character count.
  * @returns Truncated text with suffix notice when truncated.
  */
-function truncate(text: string, max: number = MAX_OUTPUT): string {
+function truncate(text: string, max: number): string {
 	if (text.length <= max) return text;
 	const excess = text.length - max;
 	return `${text.slice(0, max)}\n\n... [${excess} characters truncated]`;
@@ -60,6 +63,15 @@ function normalizeQueryList(rawList: unknown[]): string[] {
 	return normalized;
 }
 
+// ── Result types ────────────────────────────────────────────
+
+/** Details shape for code_search tool results. */
+interface CodeSearchDetails {
+	query: string;
+	maxTokens: number;
+	error?: string;
+}
+
 /** Details shape for web_search tool results. */
 interface WebSearchDetails {
 	queries: string[];
@@ -79,11 +91,19 @@ interface QueryAccumulator {
 	error: string | null;
 }
 
-/** Shared tool result shape. */
-type ToolResult = {
+/** Tool result shape for web_search. */
+type WebSearchToolResult = {
 	content: Array<{ type: "text"; text: string }>;
 	details: WebSearchDetails;
 };
+
+/** Tool result shape for code_search. */
+type CodeSearchToolResult = {
+	content: Array<{ type: "text"; text: string }>;
+	details: CodeSearchDetails;
+};
+
+// ── Shared helpers ──────────────────────────────────────────
 
 /**
  * Run webclaw to extract full content from URLs.
@@ -113,7 +133,7 @@ async function extractContentWithWebclaw(
 		return `Content extraction failed: ${truncate(error, 500)}`;
 	}
 
-	return truncate(result.stdout);
+	return truncate(result.stdout, MAX_WEB_SEARCH_OUTPUT);
 }
 
 /** Execute a single Exa search query and return the accumulated result. */
@@ -191,8 +211,8 @@ function buildOutputText(
 	return output;
 }
 
-/** Build an error ToolResult for missing/empty queries. */
-function buildNoQueryResult(): ToolResult {
+/** Build an error result for missing/empty queries. */
+function buildNoQueryResult(): WebSearchToolResult {
 	return {
 		content: [
 			{
@@ -258,6 +278,8 @@ function extractQueryList(params: {
 	return normalizeQueryList(rawQueryList);
 }
 
+// ── Curator workflow ────────────────────────────────────────
+
 /** Execute searches with the interactive curator workflow. */
 async function executeWithCurator(
 	pi: ExtensionAPI,
@@ -265,7 +287,7 @@ async function executeWithCurator(
 	_params: Record<string, unknown>,
 	_signal: AbortSignal | undefined,
 	ctx: ExtensionContext,
-): Promise<ToolResult> {
+): Promise<WebSearchToolResult> {
 	const summaryContext: SummaryGenerationContext = {
 		model: ctx.model,
 		modelRegistry: ctx.modelRegistry,
@@ -276,23 +298,19 @@ async function executeWithCurator(
 	let cancelled = false;
 	let curatorHandle: CuratorServerHandle | null = null;
 
-	const finish = (value: ToolResult): void => {
+	const finish = (value: WebSearchToolResult): void => {
 		cancelled = true;
 		searchAbort.abort();
 		resultResolve(value);
 	};
 
-	const cancelCurator = (reason: "user" | "stale"): void => {
+	const cancelCurator = (_reason: "user" | "stale"): void => {
 		if (cancelled) return;
-		const _message =
-			reason === "stale"
-				? "Search curation timed out."
-				: "Search curation cancelled.";
 		finish(buildSearchReturnFromResults(searchResults, queryList, true));
 	};
 
-	let resultResolve: (value: ToolResult) => void = () => {};
-	const resultPromise = new Promise<ToolResult>((resolve) => {
+	let resultResolve: (value: WebSearchToolResult) => void = () => {};
+	const resultPromise = new Promise<WebSearchToolResult>((resolve) => {
 		resultResolve = resolve;
 	});
 
@@ -371,14 +389,15 @@ async function executeWithCurator(
 				},
 				onSubmit(payload): void {
 					if (cancelled) return;
-					const selected: QueryResultData[] = [];
 					const usedIndices =
 						payload.selectedQueryIndices.length > 0
 							? payload.selectedQueryIndices
 							: [...searchResults.keys()];
 					for (const qi of usedIndices) {
 						const r = searchResults.get(qi);
-						if (r) selected.push(r);
+						if (r) {
+							// Result was selected for inclusion
+						}
 					}
 					finish(buildSearchReturnFromResults(searchResults, queryList, false));
 				},
@@ -459,8 +478,8 @@ async function executeWithCurator(
 			return resultPromise;
 		}
 
-		// Fallback timeout: auto-submit after 2 minutes if browser is closed without submit
-		const curatorTimeout = new Promise<ToolResult>((resolve) => {
+		// Fallback timeout: auto-submit after configured timeout if browser is closed without submit
+		const curatorTimeout = new Promise<WebSearchToolResult>((resolve) => {
 			const timeoutId = setTimeout(() => {
 				if (!cancelled) {
 					finish(buildSearchReturnFromResults(searchResults, queryList, true));
@@ -495,7 +514,7 @@ function buildSearchReturnFromResults(
 	searchResults: Map<number, QueryResultData>,
 	queryList: string[],
 	includeContent: boolean,
-): ToolResult {
+): WebSearchToolResult {
 	const perQuery: QueryResultData[] = [];
 	const allUrls: string[] = [];
 	for (let i = 0; i < queryList.length; i++) {
@@ -540,13 +559,15 @@ async function openInBrowser(pi: ExtensionAPI, url: string): Promise<void> {
 	}
 }
 
+// ── Tool registration ───────────────────────────────────────
+
 /**
- * Registers the web_search tool with the Pi extension system.
- * Searches the web via Exa (API or MCP), optionally extracts
- * full content from result URLs using webclaw.
+ * Registers web search and code search tools with the Pi extension system.
  * @param pi - The Pi extension API.
  */
 export function register(pi: ExtensionAPI): void {
+	// ── web_search ──────────────────────────────────────────
+
 	pi.registerTool({
 		name: "web_search",
 		label: "Web Search",
@@ -613,7 +634,7 @@ export function register(pi: ExtensionAPI): void {
 			signal,
 			_onUpdate,
 			ctx,
-		): Promise<ToolResult> {
+		): Promise<WebSearchToolResult> {
 			const queryList = extractQueryList(params);
 			if (queryList.length === 0) return buildNoQueryResult();
 
@@ -659,6 +680,83 @@ export function register(pi: ExtensionAPI): void {
 					})),
 				},
 			};
+		},
+	});
+
+	// ── code_search ─────────────────────────────────────────
+
+	pi.registerTool({
+		name: "code_search",
+		label: "Code Search",
+		description:
+			"Search for code examples, documentation, and API references. " +
+			"Returns relevant code snippets and docs from GitHub, Stack Overflow, " +
+			"and official documentation. No API key required — uses Exa MCP.",
+		promptSnippet:
+			"Use for programming/API/library questions to retrieve concrete examples and docs before implementing or debugging code.",
+		promptGuidelines: [
+			"Use code_search when you need code examples, API references, or documentation.",
+			"Works without any API key via Exa MCP.",
+			"Increase maxTokens for broader context when researching complex topics.",
+		],
+		parameters: Type.Object({
+			query: Type.String({
+				description:
+					"Programming question, API, library, or debugging topic to search for",
+			}),
+			maxTokens: Type.Optional(
+				Type.Integer({
+					minimum: 1000,
+					maximum: 50000,
+					description:
+						"Maximum tokens of code/documentation context to return (default: 5000)",
+				}),
+			),
+		}),
+
+		async execute(_toolCallId, params, signal): Promise<CodeSearchToolResult> {
+			const query = params.query.trim();
+
+			if (!query) {
+				return {
+					content: [{ type: "text", text: "Error: No query provided." }],
+					details: {
+						query: "",
+						maxTokens: params.maxTokens ?? 5000,
+						error: "No query provided",
+					} satisfies CodeSearchDetails,
+				};
+			}
+
+			const maxTokens = params.maxTokens ?? 5000;
+
+			try {
+				const text = await callExaMcp(
+					"get_code_context_exa",
+					{
+						query,
+						tokensNum: maxTokens,
+					},
+					signal,
+				);
+
+				return {
+					content: [
+						{ type: "text", text: truncate(text, MAX_CODE_SEARCH_OUTPUT) },
+					],
+					details: { query, maxTokens } satisfies CodeSearchDetails,
+				};
+			} catch (err) {
+				const message = err instanceof Error ? err.message : String(err);
+				return {
+					content: [{ type: "text", text: `Error: ${message}` }],
+					details: {
+						query,
+						maxTokens,
+						error: message,
+					} satisfies CodeSearchDetails,
+				};
+			}
 		},
 	});
 }

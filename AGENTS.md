@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Coding guidelines for all TypeScript files inside `pi/extensions/`.
+Coding guidelines for all TypeScript files inside `.pi/extensions/`.
 Every agent or contributor writing or modifying code must follow these rules without exception.
 
 ---
@@ -41,6 +41,11 @@ what you assumed and why, so a human can verify it later.
 - One responsibility per file. Each file has one clear purpose.
 - Fail loudly. Never silence errors. Throw or return a typed `Result`. Do not swallow exceptions.
 - No magic. Avoid implicit behavior, dynamic keys, or runtime type coercion without documentation.
+- **No future use. No premature implementation.** If a feature, variable, function, type, or hook is not needed right now for the current task — do not write it. No `// TODO: use later`, no placeholder exports, no stub functions "for future extensibility". Write only what is required today. If it is needed later, it will be written later, when that need is real and concrete.
+
+> **This rule is absolute.** Dead code, unused exports, forward-looking abstractions, and
+> speculative scaffolding are direct violations. If it is not actively used right now,
+> it does not belong in the codebase. Delete it, or do not write it in the first place.
 
 ---
 
@@ -324,3 +329,5 @@ Before marking any file as complete, verify:
 - [ ] File has one clear responsibility.
 - [ ] Biome reports no errors or warnings.
 - [ ] If you made an assumption due to unclear docs, it is commented in the code.
+- [ ] No dead code, unused exports, stub functions, or placeholders of any kind. Every line written is actively used now, not "someday".
+- [ ] No `// TODO`, `// FUTURE`, `// placeholder`, `// coming soon`, or any equivalent comment exists in the file. If it is not implemented now, it is not written now.

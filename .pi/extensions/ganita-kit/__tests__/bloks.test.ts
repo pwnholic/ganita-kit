@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { register } from "../tools/bloks.js";
+import { register } from "../cli/bloks.js";
 import { createMockPi } from "./helpers.js";
 
 const ALL_TOOL_NAMES = [

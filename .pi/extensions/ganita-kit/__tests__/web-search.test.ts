@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { register } from "../tools/web-search.js";
+import { register } from "../web-search/tools.js";
 import { createMockPi } from "./helpers.js";
 
 beforeEach(() => {

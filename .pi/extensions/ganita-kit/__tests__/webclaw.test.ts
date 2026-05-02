@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { register } from "../tools/webclaw.js";
+import { register } from "../cli/webclaw.js";
 import { createMockPi } from "./helpers.js";
 
 const ALL_TOOL_NAMES = [

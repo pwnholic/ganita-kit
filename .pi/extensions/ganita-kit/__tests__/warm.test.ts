@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { register, warmCache } from "../tools/tldr.js";
+import { register, warmCache } from "../cli/tldr.js";
 import { createMockPi } from "./helpers.js";
 
 describe("warmCache", () => {

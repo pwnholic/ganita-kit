@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { register } from "../tools/tldr.js";
+import { register } from "../cli/tldr.js";
 import { createMockPi } from "./helpers.js";
 
 /** All tool names registered by tldr in registration order. */
