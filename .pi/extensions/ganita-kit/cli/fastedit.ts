@@ -1,18 +1,18 @@
 import { StringEnum } from "@mariozechner/pi-ai";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
+import { loadConfig } from "../config/loader.js";
+import { execCli, type ToolResult } from "../shared/cli.js";
 
-/** Maximum CLI output before truncation. */
-const MAX_OUTPUT = 50_000;
-
-/** Default timeout for fastedit operations in milliseconds. */
-const DEFAULT_TIMEOUT = 30_000;
-
-/** Timeout for model-based edits (needs ML model inference). */
-const MODEL_TIMEOUT = 120_000;
-
-/** Timeout for pull (downloading ~3GB model). */
-const PULL_TIMEOUT = 600_000;
+function getDefaultTimeout(): number {
+    return loadConfig().cli.fasteditTimeoutMs ?? 30_000;
+}
+function getModelTimeout(): number {
+    return loadConfig().cli.fasteditModelTimeoutMs ?? 120_000;
+}
+function getPullTimeout(): number {
+    return loadConfig().cli.fasteditPullTimeoutMs ?? 600_000;
+}
 
 /** Default inference backend. MLX is the primary backend for Apple Silicon. */
 const DEFAULT_BACKEND = "mlx";
@@ -20,12 +20,7 @@ const DEFAULT_BACKEND = "mlx";
 /** Default model name used by `fastedit pull`. */
 const DEFAULT_MODEL = "fastedit-1.7b-mlx-8bit";
 
-/** Shared tool result shape. */
-type ToolResult = {
-    content: Array<{ type: "text"; text: string }>;
-    details: Record<string, unknown>;
-    isError?: boolean;
-};
+let piRef: ExtensionAPI | null = null;
 
 /** Backend options shared by edit, batch-edit, and multi-edit. */
 type BackendParams = {
@@ -35,44 +30,20 @@ type BackendParams = {
     api_model?: string;
 };
 
-/**
- * Resolves backend params with defaults and env var overrides.
- *
- * Priority: explicit param > env var > hardcoded default.
- *
- * Env vars:
- * - FASTEDIT_MODEL_PATH: MLX model path
- * - FASTEDIT_API_BASE: vLLM API base URL
- * - FASTEDIT_API_MODEL: vLLM model name
- */
+/** Resolves backend params with defaults and env var overrides. */
 function resolveBackendParams(params: BackendParams): Required<BackendParams> {
     return {
         backend: params.backend ?? DEFAULT_BACKEND,
-        // biome-ignore lint/complexity/useLiteralKeys: noPropertyAccessFromIndexSignature requires bracket notation
+
         model_path: params.model_path ?? process.env["FASTEDIT_MODEL_PATH"] ?? DEFAULT_MODEL,
-        // biome-ignore lint/complexity/useLiteralKeys: noPropertyAccessFromIndexSignature requires bracket notation
+
         api_base: params.api_base ?? process.env["FASTEDIT_API_BASE"] ?? "",
-        // biome-ignore lint/complexity/useLiteralKeys: noPropertyAccessFromIndexSignature requires bracket notation
+
         api_model: params.api_model ?? process.env["FASTEDIT_API_MODEL"] ?? "",
     };
 }
 
-/**
- * Truncates large CLI output to stay within token budgets.
- * @param text - Raw CLI stdout.
- * @param max - Maximum character count.
- * @returns Truncated text with suffix notice when truncated.
- */
-function truncate(text: string, max: number = MAX_OUTPUT): string {
-    if (text.length <= max) return text;
-    const excess = text.length - max;
-    return `${text.slice(0, max)}\n\n... [${excess} characters truncated]`;
-}
-
-/**
- * Pushes backend/model flags to the args array.
- * Always emits all four flags since resolveBackendParams provides defaults.
- */
+/** Pushes backend/model flags to the args array. */
 function pushBackendArgs(args: string[], resolved: Required<BackendParams>): void {
     args.push("--backend", resolved.backend);
     args.push("--model-path", resolved.model_path);
@@ -86,48 +57,23 @@ function pushBackendArgs(args: string[], resolved: Required<BackendParams>): voi
 
 /**
  * Registers fastedit CLI tools with the Pi extension system.
- * Fastedit provides AST-aware code editing — edit, rename, delete, and move
- * symbols by name using tree-sitter, with an optional 1.7B merge model
- * for complex structural changes.
+ * Fastedit provides AST-aware code editing by symbol name.
  * @param pi - The Pi extension API.
  */
 export function register(pi: ExtensionAPI): void {
-    async function execFastedit(
+    piRef = pi;
+
+    function execFastedit(
         args: string[],
         signal: AbortSignal | undefined,
-        timeout: number = DEFAULT_TIMEOUT,
+        timeout?: number,
     ): Promise<ToolResult> {
-        const result = await pi.exec("fastedit", args, {
-            ...(signal ? { signal } : {}),
-            timeout,
-        });
-
-        if (result.killed) {
-            return {
-                content: [{ type: "text", text: "Operation cancelled." }],
-                details: {},
-            };
-        }
-
-        if (result.code !== 0) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `fastedit error (exit ${result.code}): ${result.stderr || result.stdout}`,
-                    },
-                ],
-                details: {},
-                isError: true,
-            };
-        }
-
-        return {
-            content: [{ type: "text", text: truncate(result.stdout) }],
-            details: {},
-        };
+        return execCli(piRef!, "fastedit", args, signal, timeout ?? getDefaultTimeout());
     }
 
+    // =====================================================
+    // Reading & searching
+    // =====================================================
     // =====================================================
     // Reading & searching
     // =====================================================
@@ -273,7 +219,7 @@ export function register(pi: ExtensionAPI): void {
 
             pushBackendArgs(args, resolveBackendParams(params));
 
-            return execFastedit(args, signal, MODEL_TIMEOUT);
+            return execFastedit(args, signal, getModelTimeout());
         },
     });
 
@@ -304,7 +250,7 @@ export function register(pi: ExtensionAPI): void {
 
             pushBackendArgs(args, resolveBackendParams(params));
 
-            return execFastedit(args, signal, MODEL_TIMEOUT);
+            return execFastedit(args, signal, getModelTimeout());
         },
     });
 
@@ -334,7 +280,7 @@ export function register(pi: ExtensionAPI): void {
 
             pushBackendArgs(args, resolveBackendParams(params));
 
-            return execFastedit(args, signal, MODEL_TIMEOUT);
+            return execFastedit(args, signal, getModelTimeout());
         },
     });
 
@@ -462,7 +408,7 @@ export function register(pi: ExtensionAPI): void {
                 args.push("--model", params.model);
             }
 
-            return execFastedit(args, signal, PULL_TIMEOUT);
+            return execFastedit(args, signal, getPullTimeout());
         },
     });
 }

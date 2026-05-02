@@ -1,34 +1,17 @@
 import { StringEnum } from "@mariozechner/pi-ai";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
+import { loadConfig } from "../config/loader.js";
+import { execCli, type ToolResult } from "../shared/cli.js";
 
-/** Maximum CLI output before truncation. */
-const MAX_OUTPUT = 50_000;
-
-/** Default timeout for bloks operations in milliseconds. */
-const DEFAULT_TIMEOUT = 60_000;
-
-/** Timeout for indexing operations (download + analysis) in milliseconds. */
-const ADD_TIMEOUT = 120_000;
-
-/** Shared tool result shape. */
-type ToolResult = {
-    content: Array<{ type: "text"; text: string }>;
-    details: Record<string, unknown>;
-    isError?: boolean;
-};
-
-/**
- * Truncates large CLI output to stay within token budgets.
- * @param text - Raw CLI stdout.
- * @param max - Maximum character count.
- * @returns Truncated text with suffix notice when truncated.
- */
-function truncate(text: string, max: number = MAX_OUTPUT): string {
-    if (text.length <= max) return text;
-    const excess = text.length - max;
-    return `${text.slice(0, max)}\n\n... [${excess} characters truncated]`;
+function getDefaultTimeout(): number {
+    return loadConfig().cli.bloksTimeoutMs ?? 60_000;
 }
+function getAddTimeout(): number {
+    return loadConfig().cli.bloksAddTimeoutMs ?? 120_000;
+}
+
+let piRef: ExtensionAPI | null = null;
 
 /**
  * Registers bloks CLI tools with the Pi extension system.
@@ -37,42 +20,19 @@ function truncate(text: string, max: number = MAX_OUTPUT): string {
  * @param pi - The Pi extension API.
  */
 export function register(pi: ExtensionAPI): void {
-    async function execBloks(
+    piRef = pi;
+
+    function execBloks(
         args: string[],
         signal: AbortSignal | undefined,
-        timeout: number = DEFAULT_TIMEOUT,
+        timeout?: number,
     ): Promise<ToolResult> {
-        const result = await pi.exec("bloks", args, {
-            ...(signal ? { signal } : {}),
-            timeout,
-        });
-
-        if (result.killed) {
-            return {
-                content: [{ type: "text", text: "Operation cancelled." }],
-                details: {},
-            };
-        }
-
-        if (result.code !== 0) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `bloks error (exit ${result.code}): ${result.stderr || result.stdout}`,
-                    },
-                ],
-                details: {},
-                isError: true,
-            };
-        }
-
-        return {
-            content: [{ type: "text", text: truncate(result.stdout) }],
-            details: {},
-        };
+        return execCli(piRef!, "bloks", args, signal, timeout ?? getDefaultTimeout());
     }
 
+    // =====================================================
+    // Indexing
+    // =====================================================
     // =====================================================
     // Indexing
     // =====================================================
@@ -119,7 +79,7 @@ export function register(pi: ExtensionAPI): void {
                 args.push("--force");
             }
 
-            return execBloks(args, signal, ADD_TIMEOUT);
+            return execBloks(args, signal, getAddTimeout());
         },
     });
 
@@ -143,7 +103,7 @@ export function register(pi: ExtensionAPI): void {
             return execBloks(
                 ["add-local", params.path, "--name", params.name, "--format", "json"],
                 signal,
-                ADD_TIMEOUT,
+                getAddTimeout(),
             );
         },
     });
@@ -200,7 +160,7 @@ export function register(pi: ExtensionAPI): void {
                 args.push("--stale");
             }
 
-            return execBloks(args, signal, ADD_TIMEOUT);
+            return execBloks(args, signal, getAddTimeout());
         },
     });
 
@@ -243,7 +203,7 @@ export function register(pi: ExtensionAPI): void {
             return execBloks(
                 ["index-url", params.library, ...params.urls, "--format", "json"],
                 signal,
-                ADD_TIMEOUT,
+                getAddTimeout(),
             );
         },
     });

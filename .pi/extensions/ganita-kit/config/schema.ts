@@ -76,6 +76,32 @@ export interface GanitaKitConfig {
         usageMonth?: string;
     };
 
+    /** CLI tool timeouts and output limits. */
+    cli?: {
+        /** Maximum CLI output before truncation in chars (default: 50000). */
+        maxOutputChars?: number;
+        /** tldr default timeout in ms (default: 60000). */
+        tldrTimeoutMs?: number;
+        /** tldr full-project scan timeout in ms (default: 120000). */
+        tldrProjectTimeoutMs?: number;
+        /** webclaw scrape/fetch timeout in ms (default: 30000). */
+        webclawScrapeTimeoutMs?: number;
+        /** webclaw crawl timeout in ms (default: 120000). */
+        webclawCrawlTimeoutMs?: number;
+        /** webclaw research timeout in ms (default: 300000). */
+        webclawResearchTimeoutMs?: number;
+        /** bloks default timeout in ms (default: 60000). */
+        bloksTimeoutMs?: number;
+        /** bloks add/index timeout in ms (default: 120000). */
+        bloksAddTimeoutMs?: number;
+        /** fastedit default timeout in ms (default: 30000). */
+        fasteditTimeoutMs?: number;
+        /** fastedit model inference timeout in ms (default: 120000). */
+        fasteditModelTimeoutMs?: number;
+        /** fastedit model pull timeout in ms (default: 600000). */
+        fasteditPullTimeoutMs?: number;
+    };
+
     /** Gemini search provider configuration. */
     gemini?: {
         /** Default model for Gemini API search (default: gemini-3-flash-preview). */
@@ -124,6 +150,19 @@ export const DEFAULTS: Required<GanitaKitConfig> = {
         requestTimeoutMs: 60_000,
         usageCount: 0,
         usageMonth: "",
+    },
+    cli: {
+        maxOutputChars: 50_000,
+        tldrTimeoutMs: 60_000,
+        tldrProjectTimeoutMs: 120_000,
+        webclawScrapeTimeoutMs: 30_000,
+        webclawCrawlTimeoutMs: 120_000,
+        webclawResearchTimeoutMs: 300_000,
+        bloksTimeoutMs: 60_000,
+        bloksAddTimeoutMs: 120_000,
+        fasteditTimeoutMs: 30_000,
+        fasteditModelTimeoutMs: 120_000,
+        fasteditPullTimeoutMs: 600_000,
     },
     gemini: {
         defaultModel: "gemini-3-flash-preview",

@@ -1,25 +1,8 @@
 import { StringEnum } from "@mariozechner/pi-ai";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
-
-/** Maximum CLI output before truncation. */
-const MAX_OUTPUT = 50_000;
-
-/** Timeout for single-page operations in milliseconds. */
-const SCRAPE_TIMEOUT = 30_000;
-
-/** Timeout for crawl operations (multi-page) in milliseconds. */
-const CRAWL_TIMEOUT = 120_000;
-
-/** Timeout for research operations in milliseconds. */
-const RESEARCH_TIMEOUT = 300_000;
-
-/** Shared tool result shape. */
-type ToolResult = {
-    content: Array<{ type: "text"; text: string }>;
-    details: Record<string, unknown>;
-    isError?: boolean;
-};
+import { loadConfig } from "../config/loader.js";
+import { execCli, type ToolResult } from "../shared/cli.js";
 
 /** Parameters accepted by most webclaw tools (fetch + extraction options). */
 type SharedFetchParams = {
@@ -38,22 +21,18 @@ type SharedFetchParams = {
     output_dir?: string;
 };
 
-/**
- * Truncates large CLI output to stay within token budgets.
- * @param text - Raw CLI stdout.
- * @param max - Maximum character count.
- * @returns Truncated text with suffix notice when truncated.
- */
-function truncate(text: string, max: number = MAX_OUTPUT): string {
-    if (text.length <= max) return text;
-    const excess = text.length - max;
-    return `${text.slice(0, max)}\n\n... [${excess} characters truncated]`;
+function getScrapeTimeout(): number {
+    return loadConfig().cli.webclawScrapeTimeoutMs ?? 30_000;
+}
+function getCrawlTimeout(): number {
+    return loadConfig().cli.webclawCrawlTimeoutMs ?? 120_000;
+}
+function getResearchTimeout(): number {
+    return loadConfig().cli.webclawResearchTimeoutMs ?? 300_000;
 }
 
-/**
- * Appends shared fetch flags (proxy, browser, headers, cookies, etc.)
- * to the args array. Used by scrape, crawl, extract, and batch tools.
- */
+let piRef: ExtensionAPI | null = null;
+
 function pushSharedArgs(args: string[], params: SharedFetchParams): void {
     if (params.pdf_mode) {
         args.push("--pdf-mode", params.pdf_mode);
@@ -100,42 +79,17 @@ function pushSharedArgs(args: string[], params: SharedFetchParams): void {
  * @param pi - The Pi extension API.
  */
 export function register(pi: ExtensionAPI): void {
-    async function execWebclaw(
+    piRef = pi;
+
+    function execWebclaw(
         args: string[],
         signal: AbortSignal | undefined,
-        timeout: number = SCRAPE_TIMEOUT,
+        timeout?: number,
     ): Promise<ToolResult> {
-        const result = await pi.exec("webclaw", args, {
-            ...(signal ? { signal } : {}),
-            timeout,
-        });
-
-        if (result.killed) {
-            return {
-                content: [{ type: "text", text: "Operation cancelled." }],
-                details: {},
-            };
-        }
-
-        if (result.code !== 0) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `webclaw error (exit ${result.code}): ${result.stderr || result.stdout}`,
-                    },
-                ],
-                details: {},
-                isError: true,
-            };
-        }
-
-        return {
-            content: [{ type: "text", text: truncate(result.stdout) }],
-            details: {},
-        };
+        return execCli(piRef!, "webclaw", args, signal, timeout ?? getScrapeTimeout());
     }
 
+    // =====================================================
     // =====================================================
     // Core extraction
     // =====================================================
@@ -338,7 +292,7 @@ export function register(pi: ExtensionAPI): void {
 
             // Batch with many URLs needs more time
             const urlCount = params.urls?.length ?? 5;
-            const batchTimeout = Math.max(SCRAPE_TIMEOUT, urlCount * 15_000);
+            const batchTimeout = Math.max(getScrapeTimeout(), urlCount * 15_000);
 
             return execWebclaw(args, signal, batchTimeout);
         },
@@ -452,7 +406,7 @@ export function register(pi: ExtensionAPI): void {
 
             pushSharedArgs(args, params);
 
-            return execWebclaw(args, signal, CRAWL_TIMEOUT);
+            return execWebclaw(args, signal, getCrawlTimeout());
         },
     });
 
@@ -617,7 +571,7 @@ export function register(pi: ExtensionAPI): void {
                 args.push("--deep");
             }
 
-            return execWebclaw(args, signal, RESEARCH_TIMEOUT);
+            return execWebclaw(args, signal, getResearchTimeout());
         },
     });
 
@@ -707,7 +661,7 @@ export function register(pi: ExtensionAPI): void {
             }
 
             // Watch runs indefinitely; caller should use signal to stop
-            return execWebclaw(args, signal, CRAWL_TIMEOUT);
+            return execWebclaw(args, signal, getCrawlTimeout());
         },
     });
 
