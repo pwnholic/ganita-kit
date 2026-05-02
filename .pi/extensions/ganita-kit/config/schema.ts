@@ -5,8 +5,6 @@
 export interface GanitaKitConfig {
     /** Exa API key for search. Falls back to EXA_API_KEY env var. */
     exaApiKey?: string;
-    /** Gemini API key. Falls back to GEMINI_API_KEY env var. */
-    geminiApiKey?: string;
     /** Chrome profile name for cookie extraction (default: "Default"). */
     chromeProfile?: string;
 
@@ -82,16 +80,6 @@ export interface GanitaKitConfig {
         fasteditPullTimeoutMs?: number;
     };
 
-    /** Gemini search provider configuration. */
-    gemini?: {
-        /** Default model for Gemini API search (default: gemini-3-flash-preview). */
-        defaultModel?: string;
-        /** Gemini Web model for cookie-based search (default: gemini-2.5-flash). */
-        webModel?: string;
-        /** Request timeout in ms (default: 60000). */
-        timeoutMs?: number;
-    };
-
     /** Google Surf MCP configuration. */
     surf?: {
         /** Run Chrome in headless mode (default: true). */
@@ -112,7 +100,6 @@ export interface GanitaKitConfig {
 /** Default values for all config fields. */
 export const DEFAULTS: Required<GanitaKitConfig> = {
     exaApiKey: "",
-    geminiApiKey: "",
     chromeProfile: "Default",
     search: {
         defaultNumResults: 5,
@@ -149,11 +136,6 @@ export const DEFAULTS: Required<GanitaKitConfig> = {
         fasteditTimeoutMs: 30_000,
         fasteditModelTimeoutMs: 120_000,
         fasteditPullTimeoutMs: 600_000,
-    },
-    gemini: {
-        defaultModel: "gemini-3-flash-preview",
-        webModel: "gemini-2.5-flash",
-        timeoutMs: 60_000,
     },
     surf: {
         headless: true,

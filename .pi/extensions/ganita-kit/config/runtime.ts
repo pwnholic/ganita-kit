@@ -18,13 +18,6 @@ export function getExaApiKey(): string | null {
     return normalizeApiKey(process.env["EXA_API_KEY"]) ?? normalizeApiKey(loadConfig().exaApiKey);
 }
 
-/** Get Gemini API key. Checks GEMINI_API_KEY env var first, then config file. */
-export function getGeminiApiKey(): string | null {
-    return (
-        normalizeApiKey(process.env["GEMINI_API_KEY"]) ?? normalizeApiKey(loadConfig().geminiApiKey)
-    );
-}
-
 /** Get Chrome profile name for cookie extraction. */
 export function getChromeProfile(): string {
     return loadConfig().chromeProfile;

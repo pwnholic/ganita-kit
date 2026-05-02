@@ -117,8 +117,10 @@ async function ensureStarted(): Promise<void> {
             pending.clear();
         });
 
-        // Read JSON-RPC responses from stdout
-        lineReader = createInterface({ input: proc.stdout!, crlfDelay: Number.POSITIVE_INFINITY });
+        // Read JSON-RPC responses from stdout (proc is freshly spawned with stdio:["pipe", "pipe", "pipe"])
+        const stdout = proc.stdout;
+        if (!stdout) throw new Error("Failed to create surf subprocess stdout");
+        lineReader = createInterface({ input: stdout, crlfDelay: Number.POSITIVE_INFINITY });
         lineReader.on("line", (line: string) => {
             const trimmed = line.trim();
             if (!trimmed) return;
