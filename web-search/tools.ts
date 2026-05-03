@@ -683,9 +683,12 @@ export function register(pi: ExtensionAPI): void {
         promptSnippet:
             "Use for programming/API/library questions to retrieve concrete examples and docs before implementing or debugging code.",
         promptGuidelines: [
-            "Use code_search when you need code examples, API references, or documentation.",
-            "Works without any API key via Exa MCP.",
-            "Increase maxTokens for broader context when researching complex topics.",
+            "Use code_search for concrete code examples, API signatures, and documentation. Not for general web search -- use web_search or google_surf_search for that.",
+            "USE PRECISE QUERIES. 'Express.js res.locals type safety TypeScript' beats 'express types'. Include the library, the specific API, and the context.",
+            "INCLUDE THE PROBLEM. 'React useEffect cleanup race condition abort controller' finds exact solutions. 'useEffect issue' finds nothing useful.",
+            "CHAIN WITH IMPLEMENTATION. Search first to understand the API, then implement. Don't guess at signatures -- search them.",
+            "Increase maxTokens to 20000+ when researching complex integrations that need full context across multiple files.",
+            "Works without API key via hosted Exa MCP endpoint. Zero configuration needed.",
         ],
         parameters: Type.Object({
             query: Type.String({
@@ -757,9 +760,14 @@ export function register(pi: ExtensionAPI): void {
             "First call is slower (~4s setup). Requires Chrome installed + one-time bootstrap.",
         promptSnippet: "Search Google without API key",
         promptGuidelines: [
-            "Use google_surf_search when you need Google search results and have no Exa API key.",
-            "First call per session is slower (~4s) -- subsequent calls are ~1.5s.",
-            "For extracting content from URLs, use webclaw_scrape instead.",
+            "Use google_surf_search when you need Google search results and have no Exa API key, or when Exa results are insufficient.",
+            "VARY SEARCH QUERIES. Submit multiple calls with different query angles -- one query rarely covers a topic. Use domain-specific terminology, not casual phrases.",
+            "BE SPECIFIC. 'React server components streaming suspense boundaries' beats 'how does React server components work'. Targeted queries return authoritative sources, not SEO blogs.",
+            "AVOID SINGLE-WORD QUERIES. 'authentication' returns noise. 'JWT refresh token rotation OWASP recommendations' returns actionable answers.",
+            "COMBINE WITH EXTRACTION. Follow search with webclaw_scrape on promising URLs to get full content. Search gives leads, extraction gives depth.",
+            "RESULTS ARE TITLE/URL/SNIPPET ONLY. No full content is returned. If you need page content, scrape the URLs separately.",
+            "FIRST CALL PER SESSION IS SLOWER (~4s browser launch). Subsequent calls are ~1.5s.",
+            "REQUIRES one-time bootstrap: 'npx google-surf-mcp bootstrap' -- opens Chrome, run one search, close. Done permanently.",
         ],
         parameters: Type.Object({
             query: Type.String({ description: "Search query" }),

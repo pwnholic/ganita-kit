@@ -27,12 +27,12 @@ Read the task. Batch context gathering in one turn:
 
 Classify complexity:
 
-| Type | Criteria | Research needed? | Workers | Milestones |
-|------|----------|------------------|---------|------------|
-| patch | Bug fix, one change | No | 1 | 1 |
-| feature | One bounded feature | Yes | 2-4 | 1 |
-| multi-feature | Multiple features | Yes | 4-8 | 2+ |
-| greenfield | New project/module | Yes | 3-6 | 2+ |
+| Type          | Criteria            | Research needed? | Workers | Milestones |
+| ------------- | ------------------- | ---------------- | ------- | ---------- |
+| patch         | Bug fix, one change | No               | 1       | 1          |
+| feature       | One bounded feature | Yes              | 2-4     | 1          |
+| multi-feature | Multiple features   | Yes              | 4-8     | 2+         |
+| greenfield    | New project/module  | Yes              | 3-6     | 2+         |
 
 Identify unknowns: things you don't know about the codebase, the library, the API, or the domain that must be resolved before you can plan. List them explicitly.
 
@@ -115,6 +115,7 @@ Contract tracks the full lifecycle:
 ```
 
 Rules:
+
 - One assertion = one testable claim. If you need "and" to describe it, split into two.
 - Assertions with `depends: []` run first. Dependent assertions wait.
 - Decomposition is YOUR job. Workers execute one assertion each.
@@ -127,6 +128,7 @@ Write contract.json, then write plan.md for multi-feature tasks.
 Run failure analysis on the plan. Use the same process as /skill:premortem:
 
 Batch structural analysis in one turn:
+
 - **tldr_impact** for key functions
 - **tldr_deps** for affected modules
 - **tldr_smells** for existing issues
@@ -152,6 +154,7 @@ Capture all output. This goes verbatim into worker prompts. Do not summarize blo
 Dispatch workers via **delegate_task**. One worker per assertion.
 
 Respect dependency order:
+
 1. Assertions with `depends: []` first
 2. Independent assertions MAY run in parallel (batch delegate_task calls) IF they touch disjoint files
 3. Before parallelizing: check file sets overlap. Same files = serialize.
@@ -242,6 +245,7 @@ Write validation result to `.continuum/autonomous/{task-id}/validation/{mileston
 After task completes, aggregate all worker reports.
 
 Batch context gathering:
+
 - **bash**: `cat .continuum/autonomous/{task-id}/reports/*.json` -- all reports
 - **tldr_health** with `path="."` -- compare against ASSESS baseline
 
@@ -285,15 +289,15 @@ If resuming after compaction or new session:
 
 ## Failure Recovery
 
-| Situation | Recovery |
-|-----------|----------|
-| RESEARCH cannot resolve an unknown | Block and ask user via ask_user. Proceed only with answer or documented assumption. |
-| delegate_task times out | Increase max_turns, or split the assertion into smaller pieces |
-| Worker returns blocked | Read report, understand blocker, either fix prerequisite or re-plan |
-| Tests fail after implementation | Dispatch fix worker with `tdd: true`, max 2 rounds |
-| bloks returns empty for a library | Skip that context variable, don't fabricate |
-| File conflict between parallel workers | Serialize instead, pass first worker's report to second |
-| Contract gets out of sync | Re-read contract.json before each dispatch, update after each result |
+| Situation                              | Recovery                                                                            |
+| -------------------------------------- | ----------------------------------------------------------------------------------- |
+| RESEARCH cannot resolve an unknown     | Block and ask user via ask_user. Proceed only with answer or documented assumption. |
+| delegate_task times out                | Increase max_turns, or split the assertion into smaller pieces                      |
+| Worker returns blocked                 | Read report, understand blocker, either fix prerequisite or re-plan                 |
+| Tests fail after implementation        | Dispatch fix worker with `tdd: true`, max 2 rounds                                  |
+| bloks returns empty for a library      | Skip that context variable, don't fabricate                                         |
+| File conflict between parallel workers | Serialize instead, pass first worker's report to second                             |
+| Contract gets out of sync              | Re-read contract.json before each dispatch, update after each result                |
 
 ## Guidelines
 
