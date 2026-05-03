@@ -3,6 +3,9 @@ import { register as registerBloks } from "./cli/bloks.js";
 import { register as registerFastedit } from "./cli/fastedit.js";
 import { register as registerTldr } from "./cli/tldr.js";
 import { register as registerWebclaw } from "./cli/webclaw.js";
+import { register as registerContextGuard } from "./hooks/context-guard.js";
+import { register as registerPostEditDiagnostics } from "./hooks/post-edit-diagnostics.js";
+import { register as registerPreCompactHandoff } from "./hooks/pre-compact-handoff.js";
 import { register as registerAskUser } from "./tools/ask-user.js";
 import { register as registerDelegateTask } from "./tools/delegate-task.js";
 import { register as registerWebSearchTools } from "./web-search/tools.js";
@@ -38,6 +41,11 @@ export default function (pi: ExtensionAPI): void {
     registerFastedit(pi);
     registerAskUser(pi);
     registerDelegateTask(pi);
+
+    // Hooks (event handlers)
+    registerPostEditDiagnostics(pi);
+    registerPreCompactHandoff(pi);
+    registerContextGuard(pi);
 
     // Cleanup surf subprocess on process exit
     process.on("exit", () => {
