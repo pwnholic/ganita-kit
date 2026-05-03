@@ -4,3 +4,4 @@ dist/
 .tldrignore
 *.d.ts
 *.js.map
+ContinuousClaudeV4.7/
