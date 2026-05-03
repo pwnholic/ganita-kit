@@ -1,16 +1,16 @@
 ---
 name: autonomous
-description: Full SDLC pipeline -- assess plan premortem prepare execute validate evolve. Orchestrates workers via delegate_task for bounded implementation tasks with validation gates.
-allowed-tools: read bash write edit grep find tldr_structure tldr_health tldr_bugbot tldr_impact tldr_whatbreaks tldr_change_impact tldr_search tldr_extract tldr_dead tldr_smells tldr_complexity tldr_cognitive tldr_loc tldr_deps tldr_secure tldr_vuln bloks_context bloks_search bloks_card bloks_recipe bloks_learn bloks_ack bloks_nack fast_edit fast_read fast_search fast_delete ask_user delegate_task
+description: Full SDLC pipeline -- assess research plan premortem prepare execute validate evolve. Orchestrates workers via delegate_task for bounded implementation tasks with validation gates.
+allowed-tools: read bash write edit grep find web_search code_search webclaw_scrape webclaw_summarize google_surf_search tldr_structure tldr_health tldr_bugbot tldr_impact tldr_whatbreaks tldr_change_impact tldr_search tldr_extract tldr_dead tldr_smells tldr_complexity tldr_cognitive tldr_loc tldr_deps tldr_secure tldr_vuln bloks_context bloks_search bloks_card bloks_recipe bloks_learn bloks_ack bloks_nack fast_edit fast_read fast_search fast_delete ask_user delegate_task
 ---
 
 # Autonomous
 
 SDLC pipeline for bounded implementation tasks. You orchestrate -- never implement directly. Workers build via delegate_task. You plan, decompose, delegate, validate, steer.
 
-Pipeline: ASSESS -> PLAN -> PREMORTEM -> PREPARE -> EXECUTE -> VALIDATE -> EVOLVE
+Pipeline: ASSESS -> RESEARCH -> PLAN -> PREMORTEM -> PREPARE -> EXECUTE -> VALIDATE -> EVOLVE
 
-All phases run. Depth scales with complexity.
+All phases run. Depth scales with complexity. RESEARCH is optional for patch tasks, mandatory for feature and above.
 
 ## Execution Model
 
@@ -27,16 +27,68 @@ Read the task. Batch context gathering in one turn:
 
 Classify complexity:
 
-| Type | Criteria | Workers | Milestones |
-|------|----------|---------|------------|
-| patch | Bug fix, one change | 1 | 1 |
-| feature | One bounded feature | 2-4 | 1 |
-| multi-feature | Multiple features | 4-8 | 2+ |
-| greenfield | New project/module | 3-6 | 2+ |
+| Type | Criteria | Research needed? | Workers | Milestones |
+|------|----------|------------------|---------|------------|
+| patch | Bug fix, one change | No | 1 | 1 |
+| feature | One bounded feature | Yes | 2-4 | 1 |
+| multi-feature | Multiple features | Yes | 4-8 | 2+ |
+| greenfield | New project/module | Yes | 3-6 | 2+ |
+
+Identify unknowns: things you don't know about the codebase, the library, the API, or the domain that must be resolved before you can plan. List them explicitly.
+
+## RESEARCH
+
+Resolve unknowns identified in ASSESS. Skip this phase only for patch tasks with zero unknowns.
+
+Choose research strategy based on unknown type:
+
+### Codebase Unknowns
+
+Batch these in one turn:
+
+- **tldr_search** with `query="{concept}"` and `path="<path>"` -- find relevant code
+- **tldr_context** with `entry="{function}"` -- trace call graph
+- **tldr_deps** with `path="<path>"` -- dependency relationships
+- **tldr_impact** with `function_name="<name>"` and `path="<path>"` -- callers
+
+### Library/API Unknowns
+
+Batch these in one turn:
+
+- **bloks_search** with `query="{topic}"` -- indexed library docs
+- **bloks_recipe** with `library="{lib}"` and `keywords=["{kw1}", "{kw2}"]` -- composed API context
+- **bloks_card** with `library="{lib}"` and `symbol="{name}"` -- specific signatures
+- **code_search** with `query="{lib} {function} usage"` -- code examples
+
+### Domain/External Unknowns
+
+Batch these in one turn:
+
+- **web_search** with `queries=["{topic} {aspect}", "{topic} best practice"]` -- web research
+- **webclaw_scrape** with `url="{doc-url}"` -- full documentation
+- **google_surf_search** with `query="{topic}"` -- Google search fallback
+
+### Deep Investigation
+
+For complex unknowns requiring multi-turn reasoning:
+
+- **delegate_task** with a research worker:
+  - `prompt="Investigate {question}. Search codebase with tldr_search, read relevant files, trace dependencies. Write findings to .continuum/autonomous/{task-id}/research/{topic}.md"`
+  - `tools=["read", "bash", "grep", "find", "tldr_search", "tldr_structure", "tldr_extract", "bloks_search", "bloks_card"]`
+
+### Research Output
+
+Write findings to `.continuum/autonomous/{task-id}/research/{topic}.md` via **bash**.
+
+Each finding must be actionable: "X does Y, which means we must Z in the implementation."
+
+After all unknowns are resolved, you should be able to answer every question posed in ASSESS. If not, identify what remains unknown and decide: block and ask user via **ask_user**, or proceed with documented assumptions.
 
 ## PLAN
 
 Create a contract at `.continuum/autonomous/{task-id}/contract.json` via **bash**.
+
+Research findings feed directly into assertions. Every assertion should reference evidence from RESEARCH.
 
 Contract tracks the full lifecycle:
 
@@ -66,6 +118,7 @@ Rules:
 - One assertion = one testable claim. If you need "and" to describe it, split into two.
 - Assertions with `depends: []` run first. Dependent assertions wait.
 - Decomposition is YOUR job. Workers execute one assertion each.
+- Every assertion should be grounded in RESEARCH findings, not guesswork.
 
 Write contract.json, then write plan.md for multi-feature tasks.
 
@@ -84,12 +137,13 @@ Present findings via **ask_user**. BLOCK on tigers, WARN on elephants and paper 
 
 Front-load context into worker prompts. Workers should never discover what you already know.
 
-Batch all context gathering in one turn:
+Combine RESEARCH findings + library context. Batch all gathering in one turn:
 
 - **bloks_context** with `path="."` -- project rules, tastes, corrections
 - **bloks_recipe** with `library="{lib}"` and `keywords=["{kw1}", "{kw2}"]` -- task-specific API docs
 - **bloks_card** with `library="{lib}"` and `symbol="{name}"` -- specific signatures
 - **tldr_structure** with `path="<affected>"` -- affected module layout
+- **read**: `.continuum/autonomous/{task-id}/research/*.md` -- research findings
 
 Capture all output. This goes verbatim into worker prompts. Do not summarize bloks output -- paste it. The cards are already compressed.
 
@@ -110,6 +164,7 @@ Role: {implement|research|review|evolve}
 Assertion: {id} - {text}
 
 Context:
+  research_findings: {key findings from RESEARCH phase}
   bloks_context: {verbatim output from PREPARE}
   bloks_cards: {array of {id, content} objects}
   conventions: {from AGENTS.md or project rules}
@@ -128,7 +183,7 @@ Worker archetypes:
 
 **implement**: Drive minimal correct code through failing tests. TDD when `tdd: true`.
 
-**research**: Decompose unknowns. Write findings to bloks via bloks_learn. One finding per call.
+**research**: Decompose unknowns discovered during execution. Write findings to bloks via bloks_learn. One finding per call.
 
 **review**: Audit diff against contract coldly. Evidence only, no vibes.
 
@@ -213,6 +268,7 @@ All state lives in the file system:
 .continuum/autonomous/{task-id}/
   contract.json     -- assertions + lifecycle state
   plan.md           -- milestones (multi-feature+)
+  research/         -- findings from RESEARCH phase
   reports/          -- worker reports
   validation/       -- milestone results
 ```
@@ -222,14 +278,16 @@ All state lives in the file system:
 If resuming after compaction or new session:
 
 1. **read**: `.continuum/autonomous/{task-id}/contract.json`
-2. Find pending assertions and milestones
-3. Respect depends graph -- don't dispatch if dependency is pending/failed
-4. Continue from gap. Show user: assertions N/total, milestones M/total, next pending.
+2. **read**: `.continuum/autonomous/{task-id}/research/*.md` -- prior research findings
+3. Find pending assertions and milestones
+4. Respect depends graph -- don't dispatch if dependency is pending/failed
+5. Continue from gap. Show user: assertions N/total, milestones M/total, next pending.
 
 ## Failure Recovery
 
 | Situation | Recovery |
 |-----------|----------|
+| RESEARCH cannot resolve an unknown | Block and ask user via ask_user. Proceed only with answer or documented assumption. |
 | delegate_task times out | Increase max_turns, or split the assertion into smaller pieces |
 | Worker returns blocked | Read report, understand blocker, either fix prerequisite or re-plan |
 | Tests fail after implementation | Dispatch fix worker with `tdd: true`, max 2 rounds |
@@ -240,9 +298,11 @@ If resuming after compaction or new session:
 ## Guidelines
 
 - Never implement directly. Workers via delegate_task.
+- RESEARCH before PLAN. Never plan on assumptions -- plan on evidence.
 - TDD: assertion -> failing test -> implement -> pass.
 - Every milestone has a validation gate. No exceptions.
 - Workers are atomic: one task, one assertion, one report.
 - Commit after each worker: `bash` with `git add -A && git commit -m "..."`
 - Respect assertion dependency graph. Always.
 - Front-load context into worker prompts. Paste bloks output verbatim.
+- Include research findings in worker prompts. Workers should not re-discover what RESEARCH already found.

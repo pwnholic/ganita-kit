@@ -3,7 +3,7 @@ import { register as registerBloks } from "./cli/bloks.js";
 import { register as registerFastedit } from "./cli/fastedit.js";
 import { register as registerTldr } from "./cli/tldr.js";
 import { register as registerWebclaw } from "./cli/webclaw.js";
-import { register as registerContextGuard } from "./hooks/context-guard.js";
+import { register as registerContextGuard } from "./hooks/context.js";
 import { register as registerPostEditDiagnostics } from "./hooks/post-edit-diagnostics.js";
 import { register as registerPreCompactHandoff } from "./hooks/pre-compact-handoff.js";
 import { register as registerAskUser } from "./tools/ask-user.js";
